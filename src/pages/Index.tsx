@@ -45,11 +45,11 @@ const Index = () => {
     }
   };
 
-  const handleAssignCategory = (squareId: string, categoryId: string) => {
+  const handleAssignCategory = (squareId: string, categoryId: string, ownerId?: string) => {
     setSquares(squares.map(s => 
-      s.id === squareId ? { ...s, categoryId } : s
+      s.id === squareId ? { ...s, categoryId, ownerId: ownerId || s.ownerId } : s
     ));
-    toast({ title: "Category assigned!" });
+    toast({ title: "Square assigned!" });
   };
 
   const handleStartDuel = (player1Id: string, player2Id: string) => {
@@ -160,6 +160,7 @@ const Index = () => {
           <AssignCategoryDialog
             square={selectedSquare}
             categories={categories}
+            players={players}
             onAssign={handleAssignCategory}
             onClose={() => {
               setShowAssignDialog(false);
