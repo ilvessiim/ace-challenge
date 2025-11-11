@@ -6,9 +6,10 @@ type BoardGridProps = {
   players: Player[];
   categories: Category[];
   onSquareClick: (square: Square) => void;
+  highlightedSquares?: string[];
 };
 
-export const BoardGrid = ({ squares, players, categories, onSquareClick }: BoardGridProps) => {
+export const BoardGrid = ({ squares, players, categories, onSquareClick, highlightedSquares = [] }: BoardGridProps) => {
   const rows = Math.max(...squares.map(s => s.row)) + 1;
   const cols = Math.max(...squares.map(s => s.col)) + 1;
 
@@ -29,6 +30,7 @@ export const BoardGrid = ({ squares, players, categories, onSquareClick }: Board
     >
       {squares.map((square) => {
         const { owner, category } = getSquareContent(square);
+        const isHighlighted = highlightedSquares.includes(square.id);
         
         return (
           <button
@@ -38,10 +40,13 @@ export const BoardGrid = ({ squares, players, categories, onSquareClick }: Board
               "aspect-square rounded-lg border-2 transition-all duration-200",
               "flex flex-col items-center justify-center p-2 text-center",
               "hover:scale-105 hover:shadow-lg active:scale-95",
-              owner?.color === 'player1' && "bg-player1/20 border-player1",
-              owner?.color === 'player2' && "bg-player2/20 border-player2",
-              !owner && "bg-neutral/20 border-neutral"
+              !owner && "bg-neutral/20 border-neutral",
+              isHighlighted && "ring-4 ring-warning animate-pulse"
             )}
+            style={{
+              backgroundColor: owner ? `hsl(var(--${owner.color}) / 0.2)` : undefined,
+              borderColor: owner ? `hsl(var(--${owner.color}))` : undefined,
+            }}
           >
             {owner && (
               <div className="text-2xl mb-1">{owner.emoji}</div>

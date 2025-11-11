@@ -55,6 +55,22 @@ export default {
           DEFAULT: "hsl(var(--player2))",
           foreground: "hsl(var(--player2-foreground))",
         },
+        player3: {
+          DEFAULT: "hsl(var(--player3))",
+          foreground: "hsl(var(--player3-foreground))",
+        },
+        player4: {
+          DEFAULT: "hsl(var(--player4))",
+          foreground: "hsl(var(--player4-foreground))",
+        },
+        player5: {
+          DEFAULT: "hsl(var(--player5))",
+          foreground: "hsl(var(--player5-foreground))",
+        },
+        player6: {
+          DEFAULT: "hsl(var(--player6))",
+          foreground: "hsl(var(--player6-foreground))",
+        },
         neutral: {
           DEFAULT: "hsl(var(--neutral))",
           foreground: "hsl(var(--neutral-foreground))",

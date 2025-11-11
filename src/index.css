@@ -44,6 +44,18 @@ All colors MUST be HSL.
     --player2: 25 95% 55%;
     --player2-foreground: 0 0% 100%;
 
+    --player3: 140 80% 50%;
+    --player3-foreground: 0 0% 100%;
+
+    --player4: 280 90% 60%;
+    --player4-foreground: 0 0% 100%;
+
+    --player5: 320 85% 55%;
+    --player5-foreground: 0 0% 100%;
+
+    --player6: 60 95% 55%;
+    --player6-foreground: 0 0% 0%;
+
     --neutral: 220 15% 35%;
     --neutral-foreground: 0 0% 90%;
 

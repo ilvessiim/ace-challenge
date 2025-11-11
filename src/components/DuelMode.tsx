@@ -97,10 +97,19 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel }: DuelModeProps) => {
         </div>
 
         <div className="grid grid-cols-3 gap-6 items-center">
-          <div className={cn(
-            "p-6 rounded-lg transition-all",
-            isPlayer1Turn ? "bg-player1/20 ring-2 ring-player1" : "bg-card"
-          )}>
+          <div 
+            className={cn(
+              "p-6 rounded-lg transition-all",
+              isPlayer1Turn ? "ring-2" : "bg-card"
+            )}
+            style={{
+              backgroundColor: isPlayer1Turn ? `hsl(var(--${duel.player1.color}) / 0.2)` : undefined,
+              borderColor: isPlayer1Turn ? `hsl(var(--${duel.player1.color}))` : undefined,
+              ...(isPlayer1Turn && {
+                boxShadow: `0 0 0 2px hsl(var(--${duel.player1.color}))`
+              })
+            }}
+          >
             <div className="text-center">
               <div className="text-4xl mb-2">{duel.player1.emoji}</div>
               <div className="font-semibold">{duel.player1.name}</div>
@@ -114,10 +123,19 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel }: DuelModeProps) => {
             <ArrowRight className="w-8 h-8 text-muted-foreground" />
           </div>
 
-          <div className={cn(
-            "p-6 rounded-lg transition-all",
-            !isPlayer1Turn ? "bg-player2/20 ring-2 ring-player2" : "bg-card"
-          )}>
+          <div 
+            className={cn(
+              "p-6 rounded-lg transition-all",
+              !isPlayer1Turn ? "ring-2" : "bg-card"
+            )}
+            style={{
+              backgroundColor: !isPlayer1Turn ? `hsl(var(--${duel.player2.color}) / 0.2)` : undefined,
+              borderColor: !isPlayer1Turn ? `hsl(var(--${duel.player2.color}))` : undefined,
+              ...(!isPlayer1Turn && {
+                boxShadow: `0 0 0 2px hsl(var(--${duel.player2.color}))`
+              })
+            }}
+          >
             <div className="text-center">
               <div className="text-4xl mb-2">{duel.player2.emoji}</div>
               <div className="font-semibold">{duel.player2.name}</div>

@@ -2,7 +2,8 @@ export type Player = {
   id: string;
   name: string;
   emoji: string;
-  color: 'player1' | 'player2';
+  color: string;
+  categoryId: string | null;
 };
 
 export type Question = {
@@ -24,7 +25,13 @@ export type Square = {
   ownerId: string | null;
 };
 
-export type GameState = 'setup' | 'playing' | 'duel';
+export type GameState = 'setup' | 'draft' | 'playing' | 'duel' | 'continue';
+
+export type ActiveTurn = {
+  playerId: string;
+  territory: string[];
+  availableChallenges: string[];
+};
 
 export type DuelState = {
   player1: Player;

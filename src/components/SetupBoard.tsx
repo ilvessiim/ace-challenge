@@ -15,8 +15,8 @@ export const SetupBoard = ({ onStartGame }: SetupBoardProps) => {
   const [rows, setRows] = useState(5);
   const [cols, setCols] = useState(5);
   const [players, setPlayers] = useState<Player[]>([
-    { id: '1', name: 'Player 1', emoji: '😎', color: 'player1' },
-    { id: '2', name: 'Player 2', emoji: '🎮', color: 'player2' }
+    { id: '1', name: 'Player 1', emoji: '😎', color: 'player1', categoryId: null },
+    { id: '2', name: 'Player 2', emoji: '🎮', color: 'player2', categoryId: null }
   ]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -52,6 +52,26 @@ export const SetupBoard = ({ onStartGame }: SetupBoardProps) => {
 
   const removeCategory = (id: string) => {
     setCategories(categories.filter(c => c.id !== id));
+  };
+
+  const addPlayer = () => {
+    const nextId = (players.length + 1).toString();
+    const colorIndex = (players.length % 6) + 1;
+    setPlayers([...players, {
+      id: nextId,
+      name: `Player ${nextId}`,
+      emoji: '🎯',
+      color: `player${colorIndex}`,
+      categoryId: null
+    }]);
+  };
+
+  const removePlayer = (id: string) => {
+    if (players.length <= 2) {
+      toast({ title: "Need at least 2 players", variant: "destructive" });
+      return;
+    }
+    setPlayers(players.filter(p => p.id !== id));
   };
 
   const updatePlayer = (id: string, field: 'name' | 'emoji', value: string) => {
@@ -117,24 +137,41 @@ export const SetupBoard = ({ onStartGame }: SetupBoardProps) => {
         </Card>
 
         <Card className="p-6 space-y-4">
-          <h2 className="text-2xl font-bold">Players</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold">Players</h2>
+            <Button onClick={addPlayer} variant="outline" size="sm">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Player
+            </Button>
+          </div>
           {players.map(player => (
-            <div key={player.id} className="grid grid-cols-3 gap-4">
-              <div>
-                <Label>Emoji</Label>
-                <Input 
-                  value={player.emoji} 
-                  onChange={(e) => updatePlayer(player.id, 'emoji', e.target.value)}
-                  maxLength={2}
-                />
+            <div key={player.id} className="flex gap-4 items-end">
+              <div className="flex-1 grid grid-cols-3 gap-4">
+                <div>
+                  <Label>Emoji</Label>
+                  <Input 
+                    value={player.emoji} 
+                    onChange={(e) => updatePlayer(player.id, 'emoji', e.target.value)}
+                    maxLength={2}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label>Name</Label>
+                  <Input 
+                    value={player.name} 
+                    onChange={(e) => updatePlayer(player.id, 'name', e.target.value)}
+                  />
+                </div>
               </div>
-              <div className="col-span-2">
-                <Label>Name</Label>
-                <Input 
-                  value={player.name} 
-                  onChange={(e) => updatePlayer(player.id, 'name', e.target.value)}
-                />
-              </div>
+              {players.length > 2 && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => removePlayer(player.id)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
             </div>
           ))}
         </Card>
