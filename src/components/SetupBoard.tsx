@@ -21,6 +21,7 @@ export const SetupBoard = ({ onStartGame }: SetupBoardProps) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newQuestions, setNewQuestions] = useState('');
+  const [showCategoryAssignment, setShowCategoryAssignment] = useState(false);
 
   const addCategory = () => {
     if (!newCategoryName.trim()) {
@@ -74,13 +75,26 @@ export const SetupBoard = ({ onStartGame }: SetupBoardProps) => {
     setPlayers(players.filter(p => p.id !== id));
   };
 
-  const updatePlayer = (id: string, field: 'name' | 'emoji', value: string) => {
-    setPlayers(players.map(p => p.id === id ? { ...p, [field]: value } : p));
+  const updatePlayer = (id: string, field: 'name' | 'emoji' | 'categoryId', value: string) => {
+    setPlayers(players.map(p => p.id === id ? { ...p, [field]: value === '' ? null : value } : p));
+  };
+
+  const handleContinue = () => {
+    if (categories.length === 0) {
+      toast({ title: "Add at least one category", variant: "destructive" });
+      return;
+    }
+    setShowCategoryAssignment(true);
   };
 
   const handleStartGame = () => {
-    if (categories.length === 0) {
-      toast({ title: "Add at least one category", variant: "destructive" });
+    const playersWithoutCategory = players.filter(p => !p.categoryId);
+    if (playersWithoutCategory.length > 0) {
+      toast({ 
+        title: "Assign categories to all players", 
+        description: `${playersWithoutCategory.map(p => p.name).join(', ')} need categories`,
+        variant: "destructive" 
+      });
       return;
     }
 
@@ -146,7 +160,7 @@ export const SetupBoard = ({ onStartGame }: SetupBoardProps) => {
           </div>
           {players.map(player => (
             <div key={player.id} className="flex gap-4 items-end">
-              <div className="flex-1 grid grid-cols-3 gap-4">
+              <div className="flex-1 grid grid-cols-4 gap-4">
                 <div>
                   <Label>Emoji</Label>
                   <Input 
@@ -155,7 +169,7 @@ export const SetupBoard = ({ onStartGame }: SetupBoardProps) => {
                     maxLength={2}
                   />
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-3">
                   <Label>Name</Label>
                   <Input 
                     value={player.name} 
@@ -221,9 +235,38 @@ export const SetupBoard = ({ onStartGame }: SetupBoardProps) => {
           )}
         </Card>
 
-        <Button onClick={handleStartGame} size="lg" className="w-full text-lg">
-          Start Game
-        </Button>
+        {!showCategoryAssignment ? (
+          <Button onClick={handleContinue} size="lg" className="w-full text-lg">
+            Continue
+          </Button>
+        ) : (
+          <>
+            <Card className="p-6 space-y-4">
+              <h2 className="text-2xl font-bold">Assign Categories to Players</h2>
+              <p className="text-sm text-muted-foreground">
+                Each player chooses their own category to defend
+              </p>
+              {players.map(player => (
+                <div key={player.id} className="space-y-2">
+                  <Label>{player.emoji} {player.name}</Label>
+                  <select
+                    className="w-full p-2 rounded-md border bg-background text-foreground"
+                    value={player.categoryId || ''}
+                    onChange={(e) => updatePlayer(player.id, 'categoryId', e.target.value)}
+                  >
+                    <option value="">Select Category</option>
+                    {categories.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </Card>
+            <Button onClick={handleStartGame} size="lg" className="w-full text-lg">
+              Start Game
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );

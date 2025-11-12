@@ -7,9 +7,11 @@ type BoardGridProps = {
   categories: Category[];
   onSquareClick: (square: Square) => void;
   highlightedSquares?: string[];
+  showCategories?: boolean;
+  revealedSquares?: string[];
 };
 
-export const BoardGrid = ({ squares, players, categories, onSquareClick, highlightedSquares = [] }: BoardGridProps) => {
+export const BoardGrid = ({ squares, players, categories, onSquareClick, highlightedSquares = [], showCategories = false, revealedSquares = [] }: BoardGridProps) => {
   const rows = Math.max(...squares.map(s => s.row)) + 1;
   const cols = Math.max(...squares.map(s => s.col)) + 1;
 
@@ -18,6 +20,25 @@ export const BoardGrid = ({ squares, players, categories, onSquareClick, highlig
     const category = categories.find(c => c.id === square.categoryId);
     
     return { owner, category };
+  };
+
+  const isAdjacentToSameOwner = (square: Square, direction: 'top' | 'right' | 'bottom' | 'left') => {
+    if (!square.ownerId) return false;
+    
+    const deltas = {
+      top: { row: -1, col: 0 },
+      right: { row: 0, col: 1 },
+      bottom: { row: 1, col: 0 },
+      left: { row: 0, col: -1 }
+    };
+    
+    const delta = deltas[direction];
+    const adjacent = squares.find(s => 
+      s.row === square.row + delta.row && 
+      s.col === square.col + delta.col
+    );
+    
+    return adjacent?.ownerId === square.ownerId;
   };
 
   return (
@@ -31,32 +52,49 @@ export const BoardGrid = ({ squares, players, categories, onSquareClick, highlig
       {squares.map((square) => {
         const { owner, category } = getSquareContent(square);
         const isHighlighted = highlightedSquares.includes(square.id);
+        const shouldShowCategory = showCategories || revealedSquares.includes(square.id);
+        
+        const borderTop = isAdjacentToSameOwner(square, 'top');
+        const borderRight = isAdjacentToSameOwner(square, 'right');
+        const borderBottom = isAdjacentToSameOwner(square, 'bottom');
+        const borderLeft = isAdjacentToSameOwner(square, 'left');
         
         return (
           <button
             key={square.id}
             onClick={() => onSquareClick(square)}
             className={cn(
-              "aspect-square rounded-lg border-2 transition-all duration-200",
+              "aspect-square transition-all duration-200",
               "flex flex-col items-center justify-center p-2 text-center",
               "hover:scale-105 hover:shadow-lg active:scale-95",
-              !owner && "bg-neutral/20 border-neutral",
+              !owner && "bg-neutral/20 border-2 border-neutral rounded-lg",
               isHighlighted && "ring-4 ring-warning animate-pulse"
             )}
             style={{
               backgroundColor: owner ? `hsl(var(--${owner.color}) / 0.2)` : undefined,
-              borderColor: owner ? `hsl(var(--${owner.color}))` : undefined,
+              ...(owner && {
+                borderTopWidth: borderTop ? '0' : '2px',
+                borderRightWidth: borderRight ? '0' : '2px',
+                borderBottomWidth: borderBottom ? '0' : '2px',
+                borderLeftWidth: borderLeft ? '0' : '2px',
+                borderColor: `hsl(var(--${owner.color}))`,
+                borderStyle: 'solid',
+                borderTopLeftRadius: !borderTop && !borderLeft ? '0.5rem' : '0',
+                borderTopRightRadius: !borderTop && !borderRight ? '0.5rem' : '0',
+                borderBottomLeftRadius: !borderBottom && !borderLeft ? '0.5rem' : '0',
+                borderBottomRightRadius: !borderBottom && !borderRight ? '0.5rem' : '0',
+              })
             }}
           >
             {owner && (
               <div className="text-2xl mb-1">{owner.emoji}</div>
             )}
-            {category && (
+            {category && shouldShowCategory && (
               <div className="text-xs font-semibold text-foreground/80 line-clamp-2">
                 {category.name}
               </div>
             )}
-            {!category && (
+            {!category && shouldShowCategory && (
               <div className="text-xs text-muted-foreground">Empty</div>
             )}
           </button>

@@ -117,19 +117,21 @@ const Index = () => {
   };
 
   const handleStartDuel = (attackerId: string, defenderId: string) => {
-    if (!selectedSquare || !selectedSquare.categoryId || !activeTurn) return;
+    if (!selectedSquare || !activeTurn) return;
 
     const attacker = players.find(p => p.id === attackerId);
     const defender = players.find(p => p.id === defenderId);
-    const category = categories.find(c => c.id === selectedSquare.categoryId);
+    
+    // Use defender's category
+    const defenderCategory = categories.find(c => c.id === defender?.categoryId);
 
-    if (!attacker || !defender || !category) return;
+    if (!attacker || !defender || !defenderCategory) return;
 
     setDuelState({
       player1: attacker,
       player2: defender,
       square: selectedSquare,
-      category,
+      category: defenderCategory,
       currentPlayer: attacker.id,
       player1Time: 45,
       player2Time: 45,
@@ -146,31 +148,33 @@ const Index = () => {
     const winner = players.find(p => p.id === winnerId);
     const loser = players.find(p => p.id === loserId);
     
-    // Transfer ALL squares owned by loser to winner
+    // Transfer ALL squares owned by loser to winner, and update category to winner's category
+    const winnerCategoryId = winner?.categoryId || null;
     const updatedSquares = squares.map(s => 
-      s.ownerId === loserId ? { ...s, ownerId: winnerId } : s
+      s.ownerId === loserId ? { ...s, ownerId: winnerId, categoryId: winnerCategoryId } : s
     );
     const capturedSquares = squares.filter(s => s.ownerId === loserId).length;
     setSquares(updatedSquares);
     
-    // Handle category transfer
+    // Handle category transfer: if drafted player (attacker) wins, they keep their category
+    // If defender wins, they take the attacker's category
     let updatedPlayers = [...players];
     const attackerIsWinner = winnerId === activeTurn.playerId;
     
-    if (attackerIsWinner) {
-      // If winner played in their own category and won
-      if (duelState.square.ownerId === winnerId) {
-        updatedPlayers = updatedPlayers.map(p => {
-          if (p.id === winnerId && !p.categoryId && loser?.categoryId) {
-            return { ...p, categoryId: loser.categoryId };
-          }
-          if (p.id === loserId) {
-            return { ...p, categoryId: null };
-          }
-          return p;
-        });
-      }
+    if (!attackerIsWinner) {
+      // Defender won - they get attacker's category
+      updatedPlayers = updatedPlayers.map(p => {
+        if (p.id === winnerId && winner?.categoryId) {
+          return p; // Winner keeps their category
+        }
+        if (p.id === loserId) {
+          return { ...p, categoryId: null }; // Loser loses their category
+        }
+        return p;
+      });
     }
+    // If attacker wins, no category changes - they keep their own category
+    
     setPlayers(updatedPlayers);
     
     setDuelWinnerId(winnerId);
@@ -295,6 +299,8 @@ const Index = () => {
           categories={categories}
           onSquareClick={handleSquareClick}
           highlightedSquares={activeTurn?.availableChallenges}
+          showCategories={gameState === 'playing'}
+          revealedSquares={activeTurn?.availableChallenges || []}
         />
 
         {showAssignDialog && selectedSquare && (

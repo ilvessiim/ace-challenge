@@ -17,6 +17,7 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel }: DuelModeProps) => {
   const [currentPlayer, setCurrentPlayer] = useState(duel.currentPlayer);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isRunning, setIsRunning] = useState(true);
+  const [questionFrozen, setQuestionFrozen] = useState(false);
 
   const currentQuestion = duel.category.questions[currentQuestionIndex];
   const isPlayer1Turn = currentPlayer === duel.player1.id;
@@ -65,14 +66,14 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel }: DuelModeProps) => {
   };
 
   const handleSkip = () => {
-    setIsRunning(false);
+    setQuestionFrozen(true);
     setTimeout(() => {
       if (currentQuestionIndex < duel.category.questions.length - 1) {
         setCurrentQuestionIndex(prev => prev + 1);
       } else {
         setCurrentQuestionIndex(0);
       }
-      setIsRunning(true);
+      setQuestionFrozen(false);
     }, 3000);
   };
 
@@ -152,7 +153,7 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel }: DuelModeProps) => {
               Question {currentQuestionIndex + 1} of {duel.category.questions.length}
             </div>
             <div className="text-2xl font-semibold">
-              {currentQuestion?.text || "No more questions"}
+              {questionFrozen ? "Loading next question..." : (currentQuestion?.text || "No more questions")}
             </div>
           </div>
         </Card>
@@ -162,7 +163,7 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel }: DuelModeProps) => {
             onClick={handleCorrect} 
             size="lg" 
             className="bg-success hover:bg-success/90 text-success-foreground"
-            disabled={!isRunning}
+            disabled={!isRunning || questionFrozen}
           >
             <Check className="w-5 h-5 mr-2" />
             Correct Answer
@@ -171,11 +172,39 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel }: DuelModeProps) => {
             onClick={handleSkip} 
             size="lg" 
             variant="secondary"
-            disabled={!isRunning}
+            disabled={!isRunning || questionFrozen}
           >
             <X className="w-5 h-5 mr-2" />
             Skip
           </Button>
+        </div>
+
+        <div className="space-y-2">
+          <div className="text-sm text-muted-foreground text-center">End Duel Manually:</div>
+          <div className="grid grid-cols-2 gap-4">
+            <Button 
+              onClick={() => onDuelEnd(duel.player1.id)} 
+              size="lg" 
+              variant="outline"
+              style={{
+                borderColor: `hsl(var(--${duel.player1.color}))`,
+                backgroundColor: `hsl(var(--${duel.player1.color}) / 0.1)`
+              }}
+            >
+              {duel.player1.emoji} {duel.player1.name} Wins
+            </Button>
+            <Button 
+              onClick={() => onDuelEnd(duel.player2.id)} 
+              size="lg" 
+              variant="outline"
+              style={{
+                borderColor: `hsl(var(--${duel.player2.color}))`,
+                backgroundColor: `hsl(var(--${duel.player2.color}) / 0.1)`
+              }}
+            >
+              {duel.player2.emoji} {duel.player2.name} Wins
+            </Button>
+          </div>
         </div>
 
         <Button onClick={onCancel} variant="outline" className="w-full">
