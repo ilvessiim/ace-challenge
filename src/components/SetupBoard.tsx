@@ -15,8 +15,8 @@ export const SetupBoard = ({ onStartGame }: SetupBoardProps) => {
   const [rows, setRows] = useState(5);
   const [cols, setCols] = useState(5);
   const [players, setPlayers] = useState<Player[]>([
-    { id: '1', name: 'Player 1', emoji: '😎', color: 'player1', categoryId: null },
-    { id: '2', name: 'Player 2', emoji: '🎮', color: 'player2', categoryId: null }
+    { id: '1', name: 'Player 1', emoji: '😎', color: 'player1', categoryId: null, winStreak: 0 },
+    { id: '2', name: 'Player 2', emoji: '🎮', color: 'player2', categoryId: null, winStreak: 0 }
   ]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -63,7 +63,8 @@ export const SetupBoard = ({ onStartGame }: SetupBoardProps) => {
       name: `Player ${nextId}`,
       emoji: '🎯',
       color: `player${colorIndex}`,
-      categoryId: null
+      categoryId: null,
+      winStreak: 0
     }]);
   };
 
@@ -87,21 +88,28 @@ export const SetupBoard = ({ onStartGame }: SetupBoardProps) => {
     setShowCategoryAssignment(true);
   };
 
-  const handleStartGame = () => {
-    const playersWithoutCategory = players.filter(p => !p.categoryId);
-    if (playersWithoutCategory.length > 0) {
-      toast({ 
-        title: "Assign categories to all players", 
-        description: `${playersWithoutCategory.map(p => p.name).join(', ')} need categories`,
-        variant: "destructive" 
-      });
+  const startGame = () => {
+    if (players.length < 2) {
+      toast({ title: "Add at least 2 players", variant: "destructive" });
       return;
     }
 
-    const squares: Square[] = [];
+    if (categories.length < 2) {
+      toast({ title: "Add at least 2 categories", variant: "destructive" });
+      return;
+    }
+
+    const hasUnassignedPlayers = players.some(p => !p.categoryId);
+    if (hasUnassignedPlayers) {
+      toast({ title: "All players must select a category", variant: "destructive" });
+      return;
+    }
+
+    // Initialize squares
+    const initialSquares: Square[] = [];
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
-        squares.push({
+        initialSquares.push({
           id: `${r}-${c}`,
           row: r,
           col: c,
@@ -111,7 +119,26 @@ export const SetupBoard = ({ onStartGame }: SetupBoardProps) => {
       }
     }
 
-    onStartGame(rows, cols, players, categories, squares);
+    // Randomly place players on the board
+    const availableSquares = [...initialSquares];
+    const squaresWithPlayers = players.map(player => {
+      const randomIndex = Math.floor(Math.random() * availableSquares.length);
+      const square = availableSquares[randomIndex];
+      availableSquares.splice(randomIndex, 1);
+      return {
+        ...square,
+        ownerId: player.id,
+        categoryId: player.categoryId
+      };
+    });
+
+    // Merge with remaining empty squares
+    const finalSquares = initialSquares.map(sq => {
+      const playerSquare = squaresWithPlayers.find(ps => ps.id === sq.id);
+      return playerSquare || sq;
+    });
+
+    onStartGame(rows, cols, players, categories, finalSquares);
   };
 
   return (
@@ -262,7 +289,7 @@ export const SetupBoard = ({ onStartGame }: SetupBoardProps) => {
                 </div>
               ))}
             </Card>
-            <Button onClick={handleStartGame} size="lg" className="w-full text-lg">
+            <Button onClick={startGame} size="lg" className="w-full text-lg">
               Start Game
             </Button>
           </>

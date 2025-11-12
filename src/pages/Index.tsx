@@ -18,7 +18,7 @@ const Index = () => {
   const [squares, setSquares] = useState<Square[]>([]);
   const [duelState, setDuelState] = useState<DuelState | null>(null);
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
-  const [showAssignDialog, setShowAssignDialog] = useState(false);
+  const [revealedPlayerIds, setRevealedPlayerIds] = useState<string[]>([]);
   const [showDuelDialog, setShowDuelDialog] = useState(false);
   const [activeTurn, setActiveTurn] = useState<ActiveTurn | null>(null);
   const [showDraftDialog, setShowDraftDialog] = useState(false);
@@ -69,6 +69,12 @@ const Index = () => {
       return;
     }
     
+    // Reveal this player and all adjacent opponents
+    const adjacentPlayerIds = availableChallenges
+      .map(sqId => squares.find(s => s.id === sqId)?.ownerId)
+      .filter((id): id is string => !!id);
+    setRevealedPlayerIds([playerId, ...adjacentPlayerIds]);
+    
     setActiveTurn({ playerId, territory, availableChallenges });
     setGameState('draft');
     setShowDraftDialog(true);
@@ -91,13 +97,6 @@ const Index = () => {
   const handleSquareClick = (square: Square) => {
     if (gameState === 'duel') return;
     
-    // Setup mode: assign categories and players
-    if (gameState === 'playing') {
-      setSelectedSquare(square);
-      setShowAssignDialog(true);
-      return;
-    }
-    
     // Draft/Continue mode: only allow adjacent challenges
     if ((gameState === 'draft' || gameState === 'continue') && activeTurn) {
       if (!activeTurn.availableChallenges.includes(square.id)) {
@@ -109,12 +108,6 @@ const Index = () => {
     }
   };
 
-  const handleAssignCategory = (squareId: string, categoryId: string, ownerId?: string) => {
-    setSquares(squares.map(s => 
-      s.id === squareId ? { ...s, categoryId, ownerId: ownerId || s.ownerId } : s
-    ));
-    toast({ title: "Square assigned!" });
-  };
 
   const handleStartDuel = (attackerId: string, defenderId: string) => {
     if (!selectedSquare || !activeTurn) return;
@@ -156,24 +149,16 @@ const Index = () => {
     const capturedSquares = squares.filter(s => s.ownerId === loserId).length;
     setSquares(updatedSquares);
     
-    // Handle category transfer: if drafted player (attacker) wins, they keep their category
-    // If defender wins, they take the attacker's category
-    let updatedPlayers = [...players];
-    const attackerIsWinner = winnerId === activeTurn.playerId;
-    
-    if (!attackerIsWinner) {
-      // Defender won - they get attacker's category
-      updatedPlayers = updatedPlayers.map(p => {
-        if (p.id === winnerId && winner?.categoryId) {
-          return p; // Winner keeps their category
-        }
-        if (p.id === loserId) {
-          return { ...p, categoryId: null }; // Loser loses their category
-        }
-        return p;
-      });
-    }
-    // If attacker wins, no category changes - they keep their own category
+    // Update win streaks
+    let updatedPlayers = players.map(p => {
+      if (p.id === winnerId) {
+        return { ...p, winStreak: p.winStreak + 1 };
+      }
+      if (p.id === loserId) {
+        return { ...p, winStreak: 0, categoryId: null };
+      }
+      return p;
+    });
     
     setPlayers(updatedPlayers);
     
@@ -183,7 +168,7 @@ const Index = () => {
     
     toast({ 
       title: `${winner?.name} wins the duel!`,
-      description: `${winner?.emoji} captured ${capturedSquares} square${capturedSquares !== 1 ? 's' : ''}!`
+      description: `${winner?.emoji} captured ${capturedSquares} square${capturedSquares !== 1 ? 's' : ''}! Win streak: ${(winner?.winStreak || 0) + 1}`
     });
   };
 
@@ -199,6 +184,12 @@ const Index = () => {
       return;
     }
     
+    // Update revealed players for new challenges
+    const adjacentPlayerIds = availableChallenges
+      .map(sqId => squares.find(s => s.id === sqId)?.ownerId)
+      .filter((id): id is string => !!id);
+    setRevealedPlayerIds([duelWinnerId, ...adjacentPlayerIds]);
+    
     setActiveTurn({ playerId: duelWinnerId, territory: newTerritory, availableChallenges });
     setShowContinueDialog(false);
     setDuelState(null);
@@ -209,6 +200,7 @@ const Index = () => {
 
   const handleEndTurn = () => {
     setActiveTurn(null);
+    setRevealedPlayerIds([]);
     setShowContinueDialog(false);
     setDuelState(null);
     setSelectedSquare(null);
@@ -232,6 +224,7 @@ const Index = () => {
     setSelectedSquare(null);
     setActiveTurn(null);
     setDuelWinnerId(null);
+    setRevealedPlayerIds([]);
     setShowDraftDialog(false);
     setShowContinueDialog(false);
   };
@@ -264,6 +257,7 @@ const Index = () => {
           {players.map(player => {
             const ownedSquares = squares.filter(s => s.ownerId === player.id).length;
             const isActive = activeTurn?.playerId === player.id;
+            const hasStreak = player.winStreak >= 3;
             return (
               <div 
                 key={player.id} 
@@ -271,11 +265,15 @@ const Index = () => {
                   isActive ? `bg-${player.color}/30 ring-2 ring-${player.color}` : `bg-${player.color}/20`
                 }`}
                 style={{
-                  backgroundColor: isActive 
-                    ? `hsl(var(--${player.color}) / 0.3)` 
-                    : `hsl(var(--${player.color}) / 0.2)`,
+                  backgroundColor: hasStreak 
+                    ? 'hsl(var(--warning) / 0.3)'
+                    : isActive 
+                      ? `hsl(var(--${player.color}) / 0.3)` 
+                      : `hsl(var(--${player.color}) / 0.2)`,
                   ...(isActive && {
-                    boxShadow: `0 0 0 2px hsl(var(--${player.color}))`
+                    boxShadow: hasStreak 
+                      ? `0 0 0 2px hsl(var(--warning))`
+                      : `0 0 0 2px hsl(var(--${player.color}))`
                   })
                 }}
               >
@@ -285,6 +283,7 @@ const Index = () => {
                     <div className="font-semibold">{player.name}</div>
                     <div className="text-sm text-muted-foreground">
                       {ownedSquares} squares
+                      {hasStreak && ` • 🔥 ${player.winStreak} streak`}
                     </div>
                   </div>
                 </div>
@@ -299,22 +298,8 @@ const Index = () => {
           categories={categories}
           onSquareClick={handleSquareClick}
           highlightedSquares={activeTurn?.availableChallenges}
-          showCategories={gameState === 'playing'}
-          revealedSquares={activeTurn?.availableChallenges || []}
+          revealedPlayerIds={revealedPlayerIds}
         />
-
-        {showAssignDialog && selectedSquare && (
-          <AssignCategoryDialog
-            square={selectedSquare}
-            categories={categories}
-            players={players}
-            onAssign={handleAssignCategory}
-            onClose={() => {
-              setShowAssignDialog(false);
-              setSelectedSquare(null);
-            }}
-          />
-        )}
 
         {showDuelDialog && selectedSquare && activeTurn && (
           <StartDuelDialog

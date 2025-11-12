@@ -7,11 +7,10 @@ type BoardGridProps = {
   categories: Category[];
   onSquareClick: (square: Square) => void;
   highlightedSquares?: string[];
-  showCategories?: boolean;
-  revealedSquares?: string[];
+  revealedPlayerIds?: string[];
 };
 
-export const BoardGrid = ({ squares, players, categories, onSquareClick, highlightedSquares = [], showCategories = false, revealedSquares = [] }: BoardGridProps) => {
+export const BoardGrid = ({ squares, players, categories, onSquareClick, highlightedSquares = [], revealedPlayerIds = [] }: BoardGridProps) => {
   const rows = Math.max(...squares.map(s => s.row)) + 1;
   const cols = Math.max(...squares.map(s => s.col)) + 1;
 
@@ -52,7 +51,7 @@ export const BoardGrid = ({ squares, players, categories, onSquareClick, highlig
       {squares.map((square) => {
         const { owner, category } = getSquareContent(square);
         const isHighlighted = highlightedSquares.includes(square.id);
-        const shouldShowCategory = showCategories || revealedSquares.includes(square.id);
+        const shouldShowCategory = owner && revealedPlayerIds.includes(owner.id);
         
         const borderTop = isAdjacentToSameOwner(square, 'top');
         const borderRight = isAdjacentToSameOwner(square, 'right');
@@ -73,16 +72,16 @@ export const BoardGrid = ({ squares, players, categories, onSquareClick, highlig
             style={{
               backgroundColor: owner ? `hsl(var(--${owner.color}) / 0.2)` : undefined,
               ...(owner && {
-                borderTopWidth: borderTop ? '0' : '2px',
-                borderRightWidth: borderRight ? '0' : '2px',
-                borderBottomWidth: borderBottom ? '0' : '2px',
-                borderLeftWidth: borderLeft ? '0' : '2px',
+                borderTopWidth: borderTop ? '0' : '4px',
+                borderRightWidth: borderRight ? '0' : '4px',
+                borderBottomWidth: borderBottom ? '0' : '4px',
+                borderLeftWidth: borderLeft ? '0' : '4px',
                 borderColor: `hsl(var(--${owner.color}))`,
                 borderStyle: 'solid',
-                borderTopLeftRadius: !borderTop && !borderLeft ? '0.5rem' : '0',
-                borderTopRightRadius: !borderTop && !borderRight ? '0.5rem' : '0',
-                borderBottomLeftRadius: !borderBottom && !borderLeft ? '0.5rem' : '0',
-                borderBottomRightRadius: !borderBottom && !borderRight ? '0.5rem' : '0',
+                borderTopLeftRadius: !borderTop && !borderLeft ? '0.75rem' : '0',
+                borderTopRightRadius: !borderTop && !borderRight ? '0.75rem' : '0',
+                borderBottomLeftRadius: !borderBottom && !borderLeft ? '0.75rem' : '0',
+                borderBottomRightRadius: !borderBottom && !borderRight ? '0.75rem' : '0',
               })
             }}
           >
@@ -93,9 +92,6 @@ export const BoardGrid = ({ squares, players, categories, onSquareClick, highlig
               <div className="text-xs font-semibold text-foreground/80 line-clamp-2">
                 {category.name}
               </div>
-            )}
-            {!category && shouldShowCategory && (
-              <div className="text-xs text-muted-foreground">Empty</div>
             )}
           </button>
         );

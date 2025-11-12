@@ -4,6 +4,7 @@ export type Player = {
   emoji: string;
   color: string;
   categoryId: string | null;
+  winStreak: number;
 };
 
 export type Question = {

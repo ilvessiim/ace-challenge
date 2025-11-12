@@ -18,9 +18,23 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel }: DuelModeProps) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isRunning, setIsRunning] = useState(true);
   const [questionFrozen, setQuestionFrozen] = useState(false);
+  const [showBonusOption, setShowBonusOption] = useState(false);
+  const [bonusUsed, setBonusUsed] = useState(false);
 
   const currentQuestion = duel.category.questions[currentQuestionIndex];
   const isPlayer1Turn = currentPlayer === duel.player1.id;
+  const currentPlayerObj = isPlayer1Turn ? duel.player1 : duel.player2;
+  const canUseBonus = currentPlayerObj.winStreak >= 3 && !bonusUsed;
+
+  const applyBonus = () => {
+    if (isPlayer1Turn) {
+      setPlayer1Time(prev => prev + 5);
+    } else {
+      setPlayer2Time(prev => prev + 5);
+    }
+    setBonusUsed(true);
+    setShowBonusOption(false);
+  };
 
   useEffect(() => {
     if (!isRunning) return;
@@ -52,15 +66,26 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel }: DuelModeProps) => {
 
   const handleCorrect = () => {
     setIsRunning(false);
+    setShowBonusOption(false);
     setTimeout(() => {
       if (currentQuestionIndex < duel.category.questions.length - 1) {
         setCurrentQuestionIndex(prev => prev + 1);
         setCurrentPlayer(isPlayer1Turn ? duel.player2.id : duel.player1.id);
         setIsRunning(true);
+        // Show bonus option for next player if eligible
+        const nextPlayer = isPlayer1Turn ? duel.player2 : duel.player1;
+        if (nextPlayer.winStreak >= 3 && !bonusUsed) {
+          setShowBonusOption(true);
+        }
       } else {
         setCurrentQuestionIndex(0);
         setCurrentPlayer(isPlayer1Turn ? duel.player2.id : duel.player1.id);
         setIsRunning(true);
+        // Show bonus option for next player if eligible
+        const nextPlayer = isPlayer1Turn ? duel.player2 : duel.player1;
+        if (nextPlayer.winStreak >= 3 && !bonusUsed) {
+          setShowBonusOption(true);
+        }
       }
     }, 500);
   };
@@ -146,6 +171,17 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel }: DuelModeProps) => {
             </div>
           </div>
         </div>
+
+        {showBonusOption && canUseBonus && (
+          <Card className="p-4 bg-warning/20 border-warning">
+            <div className="text-center space-y-2">
+              <div className="text-sm font-semibold">🔥 3-Win Streak Bonus Available!</div>
+              <Button onClick={applyBonus} variant="default" size="sm">
+                Add +5 Seconds
+              </Button>
+            </div>
+          </Card>
+        )}
 
         <Card className="p-8 bg-muted/50">
           <div className="text-center">
