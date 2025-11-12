@@ -67,7 +67,7 @@ export const AssignCategoryDialog = ({
 
           <div>
             <h4 className="font-semibold mb-2">Owner (optional)</h4>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
               {players.map(player => (
                 <Button
                   key={player.id}

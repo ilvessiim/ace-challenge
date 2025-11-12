@@ -146,10 +146,11 @@ const Index = () => {
     const winner = players.find(p => p.id === winnerId);
     const loser = players.find(p => p.id === loserId);
     
-    // Transfer square ownership
+    // Transfer ALL squares owned by loser to winner
     const updatedSquares = squares.map(s => 
-      s.id === duelState.square.id ? { ...s, ownerId: winnerId } : s
+      s.ownerId === loserId ? { ...s, ownerId: winnerId } : s
     );
+    const capturedSquares = squares.filter(s => s.ownerId === loserId).length;
     setSquares(updatedSquares);
     
     // Handle category transfer
@@ -157,14 +158,11 @@ const Index = () => {
     const attackerIsWinner = winnerId === activeTurn.playerId;
     
     if (attackerIsWinner) {
-      // Winner played in opponent's category - takes the category
-      if (duelState.square.ownerId === loserId) {
+      // If winner played in their own category and won
+      if (duelState.square.ownerId === winnerId) {
         updatedPlayers = updatedPlayers.map(p => {
-          if (p.id === winnerId) {
-            // If winner doesn't have a category yet, take the loser's
-            if (!p.categoryId && loser?.categoryId) {
-              return { ...p, categoryId: loser.categoryId };
-            }
+          if (p.id === winnerId && !p.categoryId && loser?.categoryId) {
+            return { ...p, categoryId: loser.categoryId };
           }
           if (p.id === loserId) {
             return { ...p, categoryId: null };
@@ -181,7 +179,7 @@ const Index = () => {
     
     toast({ 
       title: `${winner?.name} wins the duel!`,
-      description: `${winner?.emoji} captured the square!`
+      description: `${winner?.emoji} captured ${capturedSquares} square${capturedSquares !== 1 ? 's' : ''}!`
     });
   };
 

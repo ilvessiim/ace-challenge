@@ -73,7 +73,7 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel }: DuelModeProps) => {
         setCurrentQuestionIndex(0);
       }
       setIsRunning(true);
-    }, 500);
+    }, 3000);
   };
 
   const formatTime = (seconds: number) => {
