@@ -21,7 +21,19 @@ export const SetupBoard = ({ onStartGame }: SetupBoardProps) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newQuestions, setNewQuestions] = useState('');
+  const [questionImages, setQuestionImages] = useState<{ [key: number]: string }>({});
   const [showCategoryAssignment, setShowCategoryAssignment] = useState(false);
+
+  const handleImageUpload = (lineIndex: number, file: File) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setQuestionImages(prev => ({
+        ...prev,
+        [lineIndex]: reader.result as string
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
 
   const addCategory = () => {
     if (!newCategoryName.trim()) {
@@ -29,10 +41,12 @@ export const SetupBoard = ({ onStartGame }: SetupBoardProps) => {
       return;
     }
     
-    const questions: Question[] = newQuestions
-      .split('\n')
-      .filter(q => q.trim())
-      .map((text, idx) => ({ id: `q${Date.now()}-${idx}`, text: text.trim() }));
+    const questionLines = newQuestions.split('\n').filter(q => q.trim());
+    const questions: Question[] = questionLines.map((text, idx) => ({ 
+      id: `q${Date.now()}-${idx}`, 
+      text: text.trim(),
+      imageUrl: questionImages[idx]
+    }));
 
     if (questions.length === 0) {
       toast({ title: "Add at least one question", variant: "destructive" });
@@ -48,6 +62,7 @@ export const SetupBoard = ({ onStartGame }: SetupBoardProps) => {
     setCategories([...categories, newCategory]);
     setNewCategoryName('');
     setNewQuestions('');
+    setQuestionImages({});
     toast({ title: "Category added!" });
   };
 
@@ -230,13 +245,39 @@ export const SetupBoard = ({ onStartGame }: SetupBoardProps) => {
               />
             </div>
             <div>
-              <Label>Questions (one per line)</Label>
+              <Label>Questions (one per line, with optional images)</Label>
               <textarea 
                 className="w-full min-h-32 p-3 rounded-md border bg-background text-foreground"
                 value={newQuestions}
                 onChange={(e) => setNewQuestions(e.target.value)}
                 placeholder="Paris&#10;London&#10;Tokyo&#10;..."
               />
+              {newQuestions.split('\n').filter(q => q.trim()).length > 0 && (
+                <div className="mt-2 space-y-2">
+                  {newQuestions.split('\n').filter(q => q.trim()).map((question, idx) => (
+                    <div key={idx} className="flex items-center gap-2 p-2 bg-muted/50 rounded">
+                      <span className="text-sm flex-1 truncate">{question}</span>
+                      <Label htmlFor={`image-${idx}`} className="cursor-pointer">
+                        <Button type="button" variant="outline" size="sm" asChild>
+                          <span>
+                            {questionImages[idx] ? '✓ Image' : 'Add Image'}
+                          </span>
+                        </Button>
+                      </Label>
+                      <input
+                        id={`image-${idx}`}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleImageUpload(idx, file);
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <Button onClick={addCategory} className="w-full">
               <Plus className="w-4 h-4 mr-2" />
