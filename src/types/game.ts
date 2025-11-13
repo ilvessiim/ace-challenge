@@ -10,6 +10,7 @@ export type Player = {
 export type Question = {
   id: string;
   text: string;
+  imageUrl?: string;
 };
 
 export type Category = {

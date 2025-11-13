@@ -184,13 +184,30 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel }: DuelModeProps) => {
         )}
 
         <Card className="p-8 bg-muted/50">
-          <div className="text-center">
+          <div className="text-center space-y-4">
             <div className="text-sm text-muted-foreground mb-2">
               Question {currentQuestionIndex + 1} of {duel.category.questions.length}
             </div>
-            <div className="text-2xl font-semibold">
-              {questionFrozen ? "Loading next question..." : (currentQuestion?.text || "No more questions")}
-            </div>
+            {!questionFrozen ? (
+              <>
+                {currentQuestion?.imageUrl && (
+                  <div className="flex justify-center mb-4">
+                    <img 
+                      src={currentQuestion.imageUrl} 
+                      alt="Question" 
+                      className="max-w-md max-h-64 object-contain rounded-lg"
+                    />
+                  </div>
+                )}
+                <div className="text-2xl font-semibold">
+                  {currentQuestion?.text || "No more questions"}
+                </div>
+              </>
+            ) : (
+              <div className="text-2xl font-semibold text-muted-foreground">
+                Loading next question...
+              </div>
+            )}
           </div>
         </Card>
 
