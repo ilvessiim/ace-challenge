@@ -52,6 +52,7 @@ export const BoardGrid = ({ squares, players, categories, onSquareClick, highlig
         const { owner, category } = getSquareContent(square);
         const isHighlighted = highlightedSquares.includes(square.id);
         const shouldShowCategory = owner && revealedPlayerIds.includes(owner.id);
+        const hasStreak = (owner?.winStreak || 0) >= 3;
         
         const borderTop = isAdjacentToSameOwner(square, 'top');
         const borderRight = isAdjacentToSameOwner(square, 'right');
@@ -70,9 +71,13 @@ export const BoardGrid = ({ squares, players, categories, onSquareClick, highlig
               isHighlighted && "ring-4 ring-warning animate-pulse"
             )}
             style={{
-              backgroundColor: owner ? `hsl(var(--${owner.color}) / 0.2)` : undefined,
+              backgroundColor: hasStreak
+                ? 'hsl(var(--warning) / 0.4)'
+                : owner 
+                  ? `hsl(var(--${owner.color}) / 0.2)` 
+                  : undefined,
               ...(owner && {
-                outline: `6px solid hsl(var(--${owner.color}))`,
+                outline: `6px solid ${hasStreak ? 'hsl(var(--warning))' : `hsl(var(--${owner.color}))`}`,
                 outlineOffset: '-6px',
                 marginTop: borderTop ? '-6px' : '0',
                 marginRight: borderRight ? '-6px' : '0',
