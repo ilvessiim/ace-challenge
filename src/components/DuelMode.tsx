@@ -9,9 +9,10 @@ type DuelModeProps = {
   duel: DuelState;
   onDuelEnd: (winnerId: string) => void;
   onCancel: () => void;
+  onBonusUsed: (playerId: string) => void;
 };
 
-export const DuelMode = ({ duel, onDuelEnd, onCancel }: DuelModeProps) => {
+export const DuelMode = ({ duel, onDuelEnd, onCancel, onBonusUsed }: DuelModeProps) => {
   const [player1Time, setPlayer1Time] = useState(duel.player1Time);
   const [player2Time, setPlayer2Time] = useState(duel.player2Time);
   const [currentPlayer, setCurrentPlayer] = useState(duel.currentPlayer);
@@ -27,6 +28,7 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel }: DuelModeProps) => {
   const canUseBonus = currentPlayerObj.winStreak >= 3 && !bonusUsed;
 
   const applyBonus = () => {
+    const currentPlayerId = isPlayer1Turn ? duel.player1.id : duel.player2.id;
     if (isPlayer1Turn) {
       setPlayer1Time(prev => prev + 5);
     } else {
@@ -34,6 +36,7 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel }: DuelModeProps) => {
     }
     setBonusUsed(true);
     setShowBonusOption(false);
+    onBonusUsed(currentPlayerId);
   };
 
   useEffect(() => {

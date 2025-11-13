@@ -9,16 +9,22 @@ import { toast } from "@/hooks/use-toast";
 
 type SetupBoardProps = {
   onStartGame: (rows: number, cols: number, players: Player[], categories: Category[], squares: Square[]) => void;
+  existingPlayers?: Player[];
+  existingCategories?: Category[];
 };
 
-export const SetupBoard = ({ onStartGame }: SetupBoardProps) => {
+export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }: SetupBoardProps) => {
   const [rows, setRows] = useState(5);
   const [cols, setCols] = useState(5);
-  const [players, setPlayers] = useState<Player[]>([
-    { id: '1', name: 'Player 1', emoji: '😎', color: 'player1', categoryId: null, winStreak: 0 },
-    { id: '2', name: 'Player 2', emoji: '🎮', color: 'player2', categoryId: null, winStreak: 0 }
-  ]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [players, setPlayers] = useState<Player[]>(
+    existingPlayers && existingPlayers.length > 0
+      ? existingPlayers.map(p => ({ ...p, winStreak: 0 }))
+      : [
+          { id: '1', name: 'Player 1', emoji: '😎', color: 'player1', categoryId: null, winStreak: 0 },
+          { id: '2', name: 'Player 2', emoji: '🎮', color: 'player2', categoryId: null, winStreak: 0 }
+        ]
+  );
+  const [categories, setCategories] = useState<Category[]>(existingCategories || []);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newQuestions, setNewQuestions] = useState('');
   const [questionImages, setQuestionImages] = useState<{ [key: number]: string }>({});

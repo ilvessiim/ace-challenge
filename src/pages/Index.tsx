@@ -172,6 +172,14 @@ const Index = () => {
     });
   };
 
+  const handleBonusUsed = (playerId: string) => {
+    setPlayers(prevPlayers => 
+      prevPlayers.map(p => 
+        p.id === playerId ? { ...p, winStreak: 0 } : p
+      )
+    );
+  };
+
   const handleContinueTurn = () => {
     if (!duelWinnerId) return;
     
@@ -229,8 +237,20 @@ const Index = () => {
     setShowContinueDialog(false);
   };
 
+  const handleEditSettings = () => {
+    setGameState('setup');
+    setSquares([]);
+    setDuelState(null);
+    setSelectedSquare(null);
+    setActiveTurn(null);
+    setDuelWinnerId(null);
+    setRevealedPlayerIds([]);
+    setShowDraftDialog(false);
+    setShowContinueDialog(false);
+  };
+
   if (gameState === 'setup') {
-    return <SetupBoard onStartGame={handleStartGame} />;
+    return <SetupBoard onStartGame={handleStartGame} existingPlayers={players} existingCategories={categories} />;
   }
 
   return (
@@ -242,9 +262,15 @@ const Index = () => {
           </h1>
           <div className="flex gap-2">
             {gameState === 'playing' && (
-              <Button onClick={draftRandomPlayer}>
-                Draft Player
-              </Button>
+              <>
+                <Button onClick={draftRandomPlayer}>
+                  Draft Player
+                </Button>
+                <Button variant="outline" onClick={handleEditSettings}>
+                  <Settings className="w-4 h-4 mr-2" />
+                  Edit Settings
+                </Button>
+              </>
             )}
             <Button variant="outline" onClick={handleResetGame}>
               <Settings className="w-4 h-4 mr-2" />
@@ -280,7 +306,12 @@ const Index = () => {
                 <div className="flex items-center gap-3">
                   <div className="text-3xl">{player.emoji}</div>
                   <div>
-                    <div className="font-semibold">{player.name}</div>
+                    <div 
+                      className="font-semibold"
+                      style={{ color: hasStreak ? 'hsl(var(--warning))' : undefined }}
+                    >
+                      {player.name}
+                    </div>
                     <div className="text-sm text-muted-foreground">
                       {ownedSquares} squares
                       {hasStreak && ` • 🔥 ${player.winStreak} streak`}
@@ -322,6 +353,7 @@ const Index = () => {
             duel={duelState}
             onDuelEnd={handleDuelEnd}
             onCancel={handleCancelDuel}
+            onBonusUsed={handleBonusUsed}
           />
         )}
 
