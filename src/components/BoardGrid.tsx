@@ -92,7 +92,18 @@ export const BoardGrid = ({ squares, players, categories, onSquareClick, highlig
             }}
           >
             {owner && (
-              <div className="text-2xl mb-1">{owner.emoji}</div>
+              <div className="text-center">
+                {owner.imageUrl ? (
+                  <img 
+                    src={owner.imageUrl} 
+                    alt={owner.name}
+                    className="w-10 h-10 rounded-full object-cover mx-auto mb-1"
+                  />
+                ) : (
+                  <div className="text-3xl mb-1">{owner.emoji}</div>
+                )}
+                <div className="text-xs font-semibold truncate">{owner.name}</div>
+              </div>
             )}
             {category && shouldShowCategory && (
               <div className="text-xs font-semibold text-foreground/80 line-clamp-2">

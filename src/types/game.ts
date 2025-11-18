@@ -2,6 +2,7 @@ export type Player = {
   id: string;
   name: string;
   emoji: string;
+  imageUrl?: string;
   color: string;
   categoryId: string | null;
   winStreak: number;

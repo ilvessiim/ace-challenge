@@ -26,19 +26,55 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
   );
   const [categories, setCategories] = useState<Category[]>(existingCategories || []);
   const [newCategoryName, setNewCategoryName] = useState('');
-  const [newQuestions, setNewQuestions] = useState('');
+  const [newQuestionTexts, setNewQuestionTexts] = useState<{ [key: number]: string }>({});
   const [questionImages, setQuestionImages] = useState<{ [key: number]: string }>({});
+  const [playerImages, setPlayerImages] = useState<{ [key: string]: string }>({});
+  const [nextQuestionId, setNextQuestionId] = useState(0);
   const [showCategoryAssignment, setShowCategoryAssignment] = useState(false);
 
-  const handleImageUpload = (lineIndex: number, file: File) => {
+  const handleQuestionImageUpload = (questionId: number, file: File) => {
     const reader = new FileReader();
     reader.onloadend = () => {
       setQuestionImages(prev => ({
         ...prev,
-        [lineIndex]: reader.result as string
+        [questionId]: reader.result as string
       }));
     };
     reader.readAsDataURL(file);
+  };
+
+  const handlePlayerImageUpload = (playerId: string, file: File) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPlayerImages(prev => ({
+        ...prev,
+        [playerId]: reader.result as string
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const addQuestion = () => {
+    const id = nextQuestionId;
+    setNextQuestionId(id + 1);
+    setNewQuestionTexts(prev => ({ ...prev, [id]: '' }));
+  };
+
+  const removeQuestion = (id: number) => {
+    setNewQuestionTexts(prev => {
+      const updated = { ...prev };
+      delete updated[id];
+      return updated;
+    });
+    setQuestionImages(prev => {
+      const updated = { ...prev };
+      delete updated[id];
+      return updated;
+    });
+  };
+
+  const updateQuestionText = (id: number, text: string) => {
+    setNewQuestionTexts(prev => ({ ...prev, [id]: text }));
   };
 
   const addCategory = () => {
@@ -47,15 +83,24 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
       return;
     }
     
-    const questionLines = newQuestions.split('\n').filter(q => q.trim());
-    const questions: Question[] = questionLines.map((text, idx) => ({ 
-      id: `q${Date.now()}-${idx}`, 
-      text: text.trim(),
-      imageUrl: questionImages[idx]
-    }));
+    const questionIds = Object.keys(newQuestionTexts).map(Number);
+    const questions: Question[] = [];
+    
+    questionIds.forEach(id => {
+      const text = newQuestionTexts[id]?.trim() || '';
+      const imageUrl = questionImages[id];
+      
+      if (text || imageUrl) {
+        questions.push({
+          id: `q${Date.now()}-${id}`,
+          text,
+          imageUrl
+        });
+      }
+    });
 
     if (questions.length === 0) {
-      toast({ title: "Add at least one question", variant: "destructive" });
+      toast({ title: "Add at least one question with text or image", variant: "destructive" });
       return;
     }
 
@@ -67,8 +112,9 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
 
     setCategories([...categories, newCategory]);
     setNewCategoryName('');
-    setNewQuestions('');
+    setNewQuestionTexts({});
     setQuestionImages({});
+    setNextQuestionId(0);
     toast({ title: "Category added!" });
   };
 
@@ -101,6 +147,13 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
     setPlayers(players.map(p => p.id === id ? { ...p, [field]: value === '' ? null : value } : p));
   };
 
+  const applyPlayerImage = (id: string) => {
+    const imageUrl = playerImages[id];
+    if (imageUrl) {
+      setPlayers(players.map(p => p.id === id ? { ...p, imageUrl } : p));
+    }
+  };
+
   const handleContinue = () => {
     if (categories.length === 0) {
       toast({ title: "Add at least one category", variant: "destructive" });
@@ -126,7 +179,6 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
       return;
     }
 
-    // Initialize squares
     const initialSquares: Square[] = [];
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
@@ -140,7 +192,6 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
       }
     }
 
-    // Randomly place players on the board
     const availableSquares = [...initialSquares];
     const squaresWithPlayers = players.map(player => {
       const randomIndex = Math.floor(Math.random() * availableSquares.length);
@@ -153,7 +204,6 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
       };
     });
 
-    // Merge with remaining empty squares
     const finalSquares = initialSquares.map(sq => {
       const playerSquare = squaresWithPlayers.find(ps => ps.id === sq.id);
       return playerSquare || sq;
@@ -177,23 +227,11 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Rows</Label>
-              <Input 
-                type="number" 
-                min="3" 
-                max="10" 
-                value={rows} 
-                onChange={(e) => setRows(Number(e.target.value))}
-              />
+              <Input type="number" min="3" max="10" value={rows} onChange={(e) => setRows(Number(e.target.value))} />
             </div>
             <div>
               <Label>Columns</Label>
-              <Input 
-                type="number" 
-                min="3" 
-                max="10" 
-                value={cols} 
-                onChange={(e) => setCols(Number(e.target.value))}
-              />
+              <Input type="number" min="3" max="10" value={cols} onChange={(e) => setCols(Number(e.target.value))} />
             </div>
           </div>
         </Card>
@@ -201,94 +239,62 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
         <Card className="p-6 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold">Players</h2>
-            <Button onClick={addPlayer} variant="outline" size="sm">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Player
-            </Button>
+            <Button onClick={addPlayer} variant="outline" size="sm"><Plus className="w-4 h-4 mr-2" />Add Player</Button>
           </div>
           {players.map(player => (
-            <div key={player.id} className="flex gap-4 items-end">
-              <div className="flex-1 grid grid-cols-4 gap-4">
-                <div>
-                  <Label>Emoji</Label>
-                  <Input 
-                    value={player.emoji} 
-                    onChange={(e) => updatePlayer(player.id, 'emoji', e.target.value)}
-                    maxLength={2}
-                  />
+            <div key={player.id} className="space-y-2">
+              <div className="flex gap-4 items-end">
+                <div className="flex-1 grid grid-cols-4 gap-4">
+                  <div><Label>Emoji</Label><Input value={player.emoji} onChange={(e) => updatePlayer(player.id, 'emoji', e.target.value)} maxLength={2} /></div>
+                  <div className="col-span-3"><Label>Name</Label><Input value={player.name} onChange={(e) => updatePlayer(player.id, 'name', e.target.value)} /></div>
                 </div>
-                <div className="col-span-3">
-                  <Label>Name</Label>
-                  <Input 
-                    value={player.name} 
-                    onChange={(e) => updatePlayer(player.id, 'name', e.target.value)}
-                  />
-                </div>
+                {players.length > 2 && <Button variant="ghost" size="sm" onClick={() => removePlayer(player.id)}><X className="w-4 h-4" /></Button>}
               </div>
-              {players.length > 2 && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => removePlayer(player.id)}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              )}
+              <div className="flex items-center gap-2">
+                <Label htmlFor={`player-image-${player.id}`} className="cursor-pointer">
+                  <Button type="button" variant="outline" size="sm" asChild>
+                    <span>{player.imageUrl || playerImages[player.id] ? '✓ Picture Set' : 'Upload Picture (Optional)'}</span>
+                  </Button>
+                </Label>
+                <input id={`player-image-${player.id}`} type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) { handlePlayerImageUpload(player.id, file); setTimeout(() => applyPlayerImage(player.id), 100); } }} />
+                {(player.imageUrl || playerImages[player.id]) && <img src={player.imageUrl || playerImages[player.id]} alt={player.name} className="w-10 h-10 rounded-full object-cover" />}
+              </div>
             </div>
           ))}
         </Card>
 
         <Card className="p-6 space-y-4">
           <h2 className="text-2xl font-bold">Categories</h2>
-          
           <div className="space-y-4">
+            <div><Label>Category Name</Label><Input value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="e.g., World Capitals" /></div>
             <div>
-              <Label>Category Name</Label>
-              <Input 
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-                placeholder="e.g., World Capitals"
-              />
-            </div>
-            <div>
-              <Label>Questions (one per line, with optional images)</Label>
-              <textarea 
-                className="w-full min-h-32 p-3 rounded-md border bg-background text-foreground"
-                value={newQuestions}
-                onChange={(e) => setNewQuestions(e.target.value)}
-                placeholder="Paris&#10;London&#10;Tokyo&#10;..."
-              />
-              {newQuestions.split('\n').filter(q => q.trim()).length > 0 && (
-                <div className="mt-2 space-y-2">
-                  {newQuestions.split('\n').filter(q => q.trim()).map((question, idx) => (
-                    <div key={idx} className="flex items-center gap-2 p-2 bg-muted/50 rounded">
-                      <span className="text-sm flex-1 truncate">{question}</span>
-                      <Label htmlFor={`image-${idx}`} className="cursor-pointer">
-                        <Button type="button" variant="outline" size="sm" asChild>
-                          <span>
-                            {questionImages[idx] ? '✓ Image' : 'Add Image'}
-                          </span>
-                        </Button>
-                      </Label>
-                      <input
-                        id={`image-${idx}`}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) handleImageUpload(idx, file);
-                        }}
-                      />
+              <div className="flex items-center justify-between mb-2">
+                <Label>Questions (text or image)</Label>
+                <Button onClick={addQuestion} variant="outline" size="sm"><Plus className="w-4 h-4 mr-2" />Add Question</Button>
+              </div>
+              {Object.keys(newQuestionTexts).length === 0 && <p className="text-sm text-muted-foreground">Click “Add Question” to start adding questions</p>}
+              <div className="space-y-2">
+                {Object.keys(newQuestionTexts).map(key => {
+                  const id = Number(key);
+                  return (
+                    <div key={id} className="flex items-start gap-2 p-3 bg-muted/50 rounded">
+                      <div className="flex-1 space-y-2">
+                        <Input placeholder="Question text (optional)" value={newQuestionTexts[id] || ''} onChange={(e) => updateQuestionText(id, e.target.value)} />
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor={`q-image-${id}`} className="cursor-pointer">
+                            <Button type="button" variant="outline" size="sm" asChild><span>{questionImages[id] ? '✓ Image' : 'Upload Image (Optional)'}</span></Button>
+                          </Label>
+                          <input id={`q-image-${id}`} type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) handleQuestionImageUpload(id, file); }} />
+                          {questionImages[id] && <img src={questionImages[id]} alt="Question" className="w-12 h-12 rounded object-cover" />}
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={() => removeQuestion(id)}><X className="w-4 h-4" /></Button>
                     </div>
-                  ))}
-                </div>
-              )}
+                  );
+                })}
+              </div>
             </div>
-            <Button onClick={addCategory} className="w-full">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Category
-            </Button>
+            <Button onClick={addCategory} className="w-full"><Plus className="w-4 h-4 mr-2" />Add Category</Button>
           </div>
 
           {categories.length > 0 && (
@@ -296,13 +302,8 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
               <h3 className="font-semibold">Added Categories:</h3>
               {categories.map(cat => (
                 <div key={cat.id} className="flex items-center justify-between p-3 bg-card rounded-lg">
-                  <div>
-                    <div className="font-semibold">{cat.name}</div>
-                    <div className="text-sm text-muted-foreground">{cat.questions.length} questions</div>
-                  </div>
-                  <Button variant="ghost" size="sm" onClick={() => removeCategory(cat.id)}>
-                    <X className="w-4 h-4" />
-                  </Button>
+                  <div><div className="font-semibold">{cat.name}</div><div className="text-sm text-muted-foreground">{cat.questions.length} questions</div></div>
+                  <Button variant="ghost" size="sm" onClick={() => removeCategory(cat.id)}><X className="w-4 h-4" /></Button>
                 </div>
               ))}
             </div>
@@ -310,35 +311,23 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
         </Card>
 
         {!showCategoryAssignment ? (
-          <Button onClick={handleContinue} size="lg" className="w-full text-lg">
-            Continue
-          </Button>
+          <Button onClick={handleContinue} size="lg" className="w-full text-lg">Continue</Button>
         ) : (
           <>
             <Card className="p-6 space-y-4">
               <h2 className="text-2xl font-bold">Assign Categories to Players</h2>
-              <p className="text-sm text-muted-foreground">
-                Each player chooses their own category to defend
-              </p>
+              <p className="text-sm text-muted-foreground">Each player chooses their own category to defend</p>
               {players.map(player => (
                 <div key={player.id} className="space-y-2">
                   <Label>{player.emoji} {player.name}</Label>
-                  <select
-                    className="w-full p-2 rounded-md border bg-background text-foreground"
-                    value={player.categoryId || ''}
-                    onChange={(e) => updatePlayer(player.id, 'categoryId', e.target.value)}
-                  >
+                  <select className="w-full p-2 rounded-md border bg-background text-foreground" value={player.categoryId || ''} onChange={(e) => updatePlayer(player.id, 'categoryId', e.target.value)}>
                     <option value="">Select Category</option>
-                    {categories.map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
+                    {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
                   </select>
                 </div>
               ))}
             </Card>
-            <Button onClick={startGame} size="lg" className="w-full text-lg">
-              Start Game
-            </Button>
+            <Button onClick={startGame} size="lg" className="w-full text-lg">Start Game</Button>
           </>
         )}
       </div>
