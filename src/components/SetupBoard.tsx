@@ -84,6 +84,8 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
     setNewQuestionTexts(prev => ({ ...prev, [id]: text }));
   };
 
+  
+  
   const addCategory = () => {
     if (!newCategoryName.trim()) {
       toast({ title: "Category name required", variant: "destructive" });
@@ -123,6 +125,23 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
     setQuestionImages({});
     setNextQuestionId(0);
     toast({ title: "Category added!" });
+  };
+
+  const createHardcodedCategory = () => {
+    setNewCategoryName("Animals");
+    
+    setNewQuestionTexts({
+      0: "What is this animal?",
+      1: "Can it fly?",
+    });
+    
+    setQuestionImages({
+      0: "https://example.com/dog.jpg",
+    });
+    
+    setNextQuestionId(2);
+    
+    addCategory();
   };
 
   const removeCategory = (id: string) => {
@@ -301,6 +320,7 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
                 })}
               </div>
             </div>
+            <Button onClick={createHardcodedCategory}>Create Hardcoded Category</Button>
             <Button onClick={addCategory} className="w-full"><Plus className="w-4 h-4 mr-2" />Add Category</Button>
           </div>
 
