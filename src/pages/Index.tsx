@@ -103,8 +103,23 @@ const Index = () => {
         toast({ title: "Can only challenge adjacent squares!", variant: "destructive" });
         return;
       }
+      
+      // Get defender from the square
+      const defenderId = square.ownerId;
+      if (!defenderId) return;
+      
+      // Check if category is assigned
+      const defender = players.find(p => p.id === defenderId);
+      const defenderCategory = categories.find(c => c.id === defender?.categoryId);
+      
+      if (!defenderCategory) {
+        toast({ title: "This square needs a category first!", variant: "destructive" });
+        return;
+      }
+      
+      // Auto-start duel with attacker and defender
       setSelectedSquare(square);
-      setShowDuelDialog(true);
+      handleStartDuel(activeTurn.playerId, defenderId);
     }
   };
 
