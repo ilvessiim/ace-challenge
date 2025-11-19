@@ -14,8 +14,8 @@ type SetupBoardProps = {
 };
 
 export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }: SetupBoardProps) => {
-  const [rows, setRows] = useState(5);
-  const [cols, setCols] = useState(5);
+  const [rows, setRows] = useState(3);
+  const [cols, setCols] = useState(3);
   const [players, setPlayers] = useState<Player[]>(
     existingPlayers && existingPlayers.length > 0
       ? existingPlayers.map(p => ({ ...p, winStreak: 0 }))
