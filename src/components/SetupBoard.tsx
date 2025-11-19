@@ -22,13 +22,13 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
       : [
           { id: '1', name: 'Player 1', emoji: '😎', color: 'player1', categoryId: null, winStreak: 0 },
           { id: '2', name: 'Player 2', emoji: '🎮', color: 'player2', categoryId: null, winStreak: 0 },
-          { id: '3', name: 'Player 1', emoji: '👍', color: 'player3', categoryId: null, winStreak: 0 },
-          { id: '4', name: 'Player 2', emoji: '🐶', color: 'player4', categoryId: null, winStreak: 0 },
-          { id: '5', name: 'Player 1', emoji: '💀', color: 'player5', categoryId: null, winStreak: 0 },
-          { id: '6', name: 'Player 1', emoji: '🐔', color: 'player6', categoryId: null, winStreak: 0 },
-          { id: '7', name: 'Player 2', emoji: '🐍', color: 'player7', categoryId: null, winStreak: 0 },
-          { id: '8', name: 'Player 1', emoji: '🐣', color: 'player8', categoryId: null, winStreak: 0 },
-          { id: '9', name: 'Player 2', emoji: '☀️', color: 'player9', categoryId: null, winStreak: 0 }
+          { id: '3', name: 'Player 3', emoji: '👍', color: 'player3', categoryId: null, winStreak: 0 },
+          { id: '4', name: 'Player 4', emoji: '🐶', color: 'player4', categoryId: null, winStreak: 0 },
+          { id: '5', name: 'Player 5', emoji: '💀', color: 'player5', categoryId: null, winStreak: 0 },
+          { id: '6', name: 'Player 6', emoji: '🐔', color: 'player6', categoryId: null, winStreak: 0 },
+          { id: '7', name: 'Player 7', emoji: '🐍', color: 'player7', categoryId: null, winStreak: 0 },
+          { id: '8', name: 'Player 8', emoji: '🐣', color: 'player8', categoryId: null, winStreak: 0 },
+          { id: '9', name: 'Player 9', emoji: '☀️', color: 'player9', categoryId: null, winStreak: 0 }
         ]
   );
   const [categories, setCategories] = useState<Category[]>(existingCategories || []);
@@ -131,7 +131,7 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
 
   const addPlayer = () => {
     const nextId = (players.length + 1).toString();
-    const colorIndex = (players.length % 6) + 1;
+    const colorIndex = (players.length % 9) + 1;
     setPlayers([...players, {
       id: nextId,
       name: `Player ${nextId}`,
