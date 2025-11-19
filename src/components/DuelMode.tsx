@@ -17,10 +17,11 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel, onBonusUsed }: DuelModePro
   const [player2Time, setPlayer2Time] = useState(duel.player2Time);
   const [currentPlayer, setCurrentPlayer] = useState(duel.currentPlayer);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [isRunning, setIsRunning] = useState(true);
+  const [isRunning, setIsRunning] = useState(false);
   const [questionFrozen, setQuestionFrozen] = useState(false);
   const [player1BonusUsed, setPlayer1BonusUsed] = useState(false);
   const [player2BonusUsed, setPlayer2BonusUsed] = useState(false);
+  const [showReadyScreen, setShowReadyScreen] = useState(true);
 
   const currentQuestion = duel.category.questions[currentQuestionIndex];
   const isPlayer1Turn = currentPlayer === duel.player1.id;
@@ -38,6 +39,11 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel, onBonusUsed }: DuelModePro
       setPlayer2BonusUsed(true);
     }
     onBonusUsed(currentPlayerId);
+  };
+
+  const startDuel = () => {
+    setShowReadyScreen(false);
+    setIsRunning(true);
   };
 
   useEffect(() => {
@@ -107,6 +113,86 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel, onBonusUsed }: DuelModePro
     return 'text-destructive';
   };
 
+  if (showReadyScreen) {
+    return (
+      <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-4xl p-8 space-y-6">
+          <div className="text-center space-y-4">
+            <h2 className="text-4xl font-bold">DUEL MODE</h2>
+            <p className="text-xl text-muted-foreground">{duel.category.name}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6 py-6">
+            <div 
+              className="p-8 rounded-lg text-center space-y-3"
+              style={{
+                backgroundColor: `hsl(var(--${duel.player1.color}) / 0.2)`,
+                borderWidth: '2px',
+                borderColor: `hsl(var(--${duel.player1.color}))`
+              }}
+            >
+              {duel.player1.imageUrl ? (
+                <img src={duel.player1.imageUrl} alt={duel.player1.name} className="w-24 h-24 mx-auto rounded-full object-cover" />
+              ) : (
+                <div className="text-6xl">{duel.player1.emoji}</div>
+              )}
+              <div className="text-2xl font-bold">{duel.player1.name}</div>
+              {duel.player1.winStreak >= 3 && !player1BonusUsed && (
+                <div className="text-warning text-sm font-semibold">🔥 3-Win Streak!</div>
+              )}
+            </div>
+
+            <div 
+              className="p-8 rounded-lg text-center space-y-3"
+              style={{
+                backgroundColor: `hsl(var(--${duel.player2.color}) / 0.2)`,
+                borderWidth: '2px',
+                borderColor: `hsl(var(--${duel.player2.color}))`
+              }}
+            >
+              {duel.player2.imageUrl ? (
+                <img src={duel.player2.imageUrl} alt={duel.player2.name} className="w-24 h-24 mx-auto rounded-full object-cover" />
+              ) : (
+                <div className="text-6xl">{duel.player2.emoji}</div>
+              )}
+              <div className="text-2xl font-bold">{duel.player2.name}</div>
+              {duel.player2.winStreak >= 3 && !player2BonusUsed && (
+                <div className="text-warning text-sm font-semibold">🔥 3-Win Streak!</div>
+              )}
+            </div>
+          </div>
+
+          {(canUseBonus) && (
+            <Card className="p-6 bg-warning/20 border-warning">
+              <div className="text-center space-y-4">
+                <div className="text-lg font-bold">🔥 Bonus Available for {currentPlayerObj.name}!</div>
+                <p className="text-sm">You have a 3-win streak. Add +5 seconds to your time?</p>
+                <div className="flex gap-4 justify-center">
+                  <Button onClick={applyBonus} variant="default" size="lg">
+                    Use +5 Seconds Bonus
+                  </Button>
+                  <Button onClick={startDuel} variant="outline" size="lg">
+                    Continue Without Bonus
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {!canUseBonus && (
+            <Button onClick={startDuel} size="lg" className="w-full text-xl py-6">
+              Start Playing
+            </Button>
+          )}
+
+          <Button onClick={onCancel} variant="outline" className="w-full">
+            Cancel Duel
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-4xl p-8 space-y-6">
@@ -118,19 +204,20 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel, onBonusUsed }: DuelModePro
         <div className="grid grid-cols-3 gap-6 items-center">
           <div 
             className={cn(
-              "p-6 rounded-lg transition-all",
-              isPlayer1Turn ? "ring-2" : "bg-card"
+              "p-6 rounded-lg transition-all bg-card",
+              isPlayer1Turn && "ring-2"
             )}
-            style={{
-              backgroundColor: isPlayer1Turn ? `hsl(var(--${duel.player1.color}) / 0.2)` : undefined,
-              borderColor: isPlayer1Turn ? `hsl(var(--${duel.player1.color}))` : undefined,
-              ...(isPlayer1Turn && {
-                boxShadow: `0 0 0 2px hsl(var(--${duel.player1.color}))`
-              })
-            }}
+            style={isPlayer1Turn ? {
+              backgroundColor: `hsl(var(--${duel.player1.color}) / 0.2)`,
+              boxShadow: `0 0 0 2px hsl(var(--${duel.player1.color}))`
+            } : undefined}
           >
             <div className="text-center">
-              <div className="text-4xl mb-2">{duel.player1.emoji}</div>
+              {duel.player1.imageUrl ? (
+                <img src={duel.player1.imageUrl} alt={duel.player1.name} className="w-16 h-16 mx-auto mb-2 rounded-full object-cover" />
+              ) : (
+                <div className="text-4xl mb-2">{duel.player1.emoji}</div>
+              )}
               <div className="font-semibold">{duel.player1.name}</div>
               <div className={cn("text-3xl font-bold mt-2", getTimeColor(player1Time))}>
                 {formatTime(player1Time)}
@@ -144,19 +231,20 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel, onBonusUsed }: DuelModePro
 
           <div 
             className={cn(
-              "p-6 rounded-lg transition-all",
-              !isPlayer1Turn ? "ring-2" : "bg-card"
+              "p-6 rounded-lg transition-all bg-card",
+              !isPlayer1Turn && "ring-2"
             )}
-            style={{
-              backgroundColor: !isPlayer1Turn ? `hsl(var(--${duel.player2.color}) / 0.2)` : undefined,
-              borderColor: !isPlayer1Turn ? `hsl(var(--${duel.player2.color}))` : undefined,
-              ...(!isPlayer1Turn && {
-                boxShadow: `0 0 0 2px hsl(var(--${duel.player2.color}))`
-              })
-            }}
+            style={!isPlayer1Turn ? {
+              backgroundColor: `hsl(var(--${duel.player2.color}) / 0.2)`,
+              boxShadow: `0 0 0 2px hsl(var(--${duel.player2.color}))`
+            } : undefined}
           >
             <div className="text-center">
-              <div className="text-4xl mb-2">{duel.player2.emoji}</div>
+              {duel.player2.imageUrl ? (
+                <img src={duel.player2.imageUrl} alt={duel.player2.name} className="w-16 h-16 mx-auto mb-2 rounded-full object-cover" />
+              ) : (
+                <div className="text-4xl mb-2">{duel.player2.emoji}</div>
+              )}
               <div className="font-semibold">{duel.player2.name}</div>
               <div className={cn("text-3xl font-bold mt-2", getTimeColor(player2Time))}>
                 {formatTime(player2Time)}
