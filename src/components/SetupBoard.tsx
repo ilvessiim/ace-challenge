@@ -53,10 +53,15 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
   const handlePlayerImageUpload = (playerId: string, file: File) => {
     const reader = new FileReader();
     reader.onloadend = () => {
+      const imageUrl = reader.result as string;
       setPlayerImages(prev => ({
         ...prev,
-        [playerId]: reader.result as string
+        [playerId]: imageUrl
       }));
+      // Immediately set the imageUrl on the player
+      setPlayers(prev => prev.map(p => 
+        p.id === playerId ? { ...p, imageUrl } : p
+      ));
     };
     reader.readAsDataURL(file);
   };
@@ -282,7 +287,7 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
                     <span>{player.imageUrl || playerImages[player.id] ? '✓ Picture Set' : 'Upload Picture (Optional)'}</span>
                   </Button>
                 </Label>
-                <input id={`player-image-${player.id}`} type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) { handlePlayerImageUpload(player.id, file); setTimeout(() => applyPlayerImage(player.id), 100); } }} />
+                <input id={`player-image-${player.id}`} type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) { handlePlayerImageUpload(player.id, file); } }} />
                 {(player.imageUrl || playerImages[player.id]) && <img src={player.imageUrl || playerImages[player.id]} alt={player.name} className="w-10 h-10 rounded-full object-cover" />}
               </div>
             </div>
