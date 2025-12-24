@@ -71,9 +71,9 @@ export const BoardGrid = ({ squares, players, categories, onSquareClick, highlig
           bgColor = 'rgba(0, 149, 182, 0.6)';
           outlineColor = 'rgb(0, 0, 0)';
         } else if (isActivePlayerSquare) {
-          // Active player choosing - turquoise
-          bgColor = 'rgba(64, 224, 208, 0.5)';
-          outlineColor = 'rgb(64, 224, 208)';
+          // Active player choosing - blueberry (no animation)
+          bgColor = 'rgba(79, 70, 229, 0.5)';
+          outlineColor = 'rgb(79, 70, 229)';
         } else if (hasStreak) {
           bgColor = 'hsl(var(--warning) / 0.4)';
           outlineColor = 'hsl(var(--warning))';
@@ -111,9 +111,6 @@ export const BoardGrid = ({ squares, players, categories, onSquareClick, highlig
               ...(isHighlighted && {
                 animation: 'pulse-blue 1.5s ease-in-out infinite',
               }),
-              ...(isActivePlayerSquare && {
-                animation: 'pulse-purple 1.5s ease-in-out infinite',
-              })
             }}
           >
             {owner && (
