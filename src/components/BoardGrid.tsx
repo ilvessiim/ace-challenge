@@ -1,5 +1,6 @@
 import { Square, Player, Category } from "@/types/game";
 import { cn } from "@/lib/utils";
+import { User } from "lucide-react";
 
 type BoardGridProps = {
   squares: Square[];
@@ -92,18 +93,19 @@ export const BoardGrid = ({ squares, players, categories, onSquareClick, highlig
             }}
           >
             {owner && (
-              <div className="text-center w-full">
-                {owner.imageUrl ? (
-                  <div className="w-full max-w-[80%] aspect-square mx-auto mb-2">
+              <div className="text-center w-full flex flex-col items-center">
+                <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center overflow-hidden border-3 border-background shadow-lg mb-2">
+                  {owner.imageUrl ? (
                     <img 
                       src={owner.imageUrl} 
                       alt={owner.name}
-                      className="w-full h-full rounded-lg object-cover border-2 border-background shadow-lg"
+                      className="w-full h-full object-cover"
+                      style={{ minWidth: '100%', minHeight: '100%' }}
                     />
-                  </div>
-                ) : (
-                  <div className="text-4xl mb-2">{owner.emoji}</div>
-                )}
+                  ) : (
+                    <User className="w-10 h-10 text-muted-foreground" />
+                  )}
+                </div>
                 <div className="text-sm font-semibold truncate px-1">{owner.name}</div>
               </div>
             )}

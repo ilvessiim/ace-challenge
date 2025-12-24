@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DuelState } from "@/types/game";
-import { Check, X, ArrowRight } from "lucide-react";
+import { Check, X, ArrowRight, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type DuelModeProps = {
@@ -10,6 +10,16 @@ type DuelModeProps = {
   onDuelEnd: (winnerId: string) => void;
   onCancel: () => void;
   onBonusUsed: (playerId: string) => void;
+};
+
+// Fisher-Yates shuffle
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
 };
 
 export const DuelMode = ({ duel, onDuelEnd, onCancel, onBonusUsed }: DuelModeProps) => {
@@ -23,7 +33,10 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel, onBonusUsed }: DuelModePro
   const [player2BonusUsed, setPlayer2BonusUsed] = useState(false);
   const [showReadyScreen, setShowReadyScreen] = useState(true);
 
-  const currentQuestion = duel.category.questions[currentQuestionIndex];
+  // Shuffle questions once when duel starts
+  const shuffledQuestions = useMemo(() => shuffleArray(duel.category.questions), [duel.category.questions]);
+
+  const currentQuestion = shuffledQuestions[currentQuestionIndex];
   const isPlayer1Turn = currentPlayer === duel.player1.id;
   const currentPlayerObj = isPlayer1Turn ? duel.player1 : duel.player2;
   const currentPlayerBonusUsed = isPlayer1Turn ? player1BonusUsed : player2BonusUsed;
@@ -77,7 +90,7 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel, onBonusUsed }: DuelModePro
   const handleCorrect = () => {
     setIsRunning(false);
     setTimeout(() => {
-      if (currentQuestionIndex < duel.category.questions.length - 1) {
+      if (currentQuestionIndex < shuffledQuestions.length - 1) {
         setCurrentQuestionIndex(prev => prev + 1);
         setCurrentPlayer(isPlayer1Turn ? duel.player2.id : duel.player1.id);
         setIsRunning(true);
@@ -92,7 +105,7 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel, onBonusUsed }: DuelModePro
   const handleSkip = () => {
     setQuestionFrozen(true);
     setTimeout(() => {
-      if (currentQuestionIndex < duel.category.questions.length - 1) {
+      if (currentQuestionIndex < shuffledQuestions.length - 1) {
         setCurrentQuestionIndex(prev => prev + 1);
       } else {
         setCurrentQuestionIndex(0);
@@ -113,6 +126,34 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel, onBonusUsed }: DuelModePro
     return 'text-destructive';
   };
 
+  const PlayerAvatar = ({ player, size = 'md' }: { player: typeof duel.player1, size?: 'sm' | 'md' | 'lg' }) => {
+    const sizeClasses = {
+      sm: 'w-16 h-16',
+      md: 'w-24 h-24',
+      lg: 'w-32 h-32'
+    };
+    const iconSizes = {
+      sm: 'w-8 h-8',
+      md: 'w-12 h-12',
+      lg: 'w-16 h-16'
+    };
+    
+    return (
+      <div className={cn(sizeClasses[size], "rounded-full bg-muted flex items-center justify-center overflow-hidden mx-auto border-2 border-background shadow-lg")}>
+        {player.imageUrl ? (
+          <img 
+            src={player.imageUrl} 
+            alt={player.name} 
+            className="w-full h-full object-cover"
+            style={{ minWidth: '100%', minHeight: '100%' }}
+          />
+        ) : (
+          <User className={cn(iconSizes[size], "text-muted-foreground")} />
+        )}
+      </div>
+    );
+  };
+
   if (showReadyScreen) {
     return (
       <div className="fixed inset-0 bg-background/95 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -131,11 +172,7 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel, onBonusUsed }: DuelModePro
                 borderColor: `hsl(var(--${duel.player1.color}))`
               }}
             >
-              {duel.player1.imageUrl ? (
-                <img src={duel.player1.imageUrl} alt={duel.player1.name} className="w-24 h-24 mx-auto rounded-full object-cover" />
-              ) : (
-                <div className="text-6xl">{duel.player1.emoji}</div>
-              )}
+              <PlayerAvatar player={duel.player1} size="lg" />
               <div className="text-2xl font-bold">{duel.player1.name}</div>
               {duel.player1.winStreak >= 3 && !player1BonusUsed && (
                 <div className="text-warning text-sm font-semibold">🔥 3-Win Streak!</div>
@@ -150,11 +187,7 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel, onBonusUsed }: DuelModePro
                 borderColor: `hsl(var(--${duel.player2.color}))`
               }}
             >
-              {duel.player2.imageUrl ? (
-                <img src={duel.player2.imageUrl} alt={duel.player2.name} className="w-24 h-24 mx-auto rounded-full object-cover" />
-              ) : (
-                <div className="text-6xl">{duel.player2.emoji}</div>
-              )}
+              <PlayerAvatar player={duel.player2} size="lg" />
               <div className="text-2xl font-bold">{duel.player2.name}</div>
               {duel.player2.winStreak >= 3 && !player2BonusUsed && (
                 <div className="text-warning text-sm font-semibold">🔥 3-Win Streak!</div>
@@ -213,12 +246,8 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel, onBonusUsed }: DuelModePro
             } : undefined}
           >
             <div className="text-center">
-              {duel.player1.imageUrl ? (
-                <img src={duel.player1.imageUrl} alt={duel.player1.name} className="w-16 h-16 mx-auto mb-2 rounded-full object-cover" />
-              ) : (
-                <div className="text-4xl mb-2">{duel.player1.emoji}</div>
-              )}
-              <div className="font-semibold">{duel.player1.name}</div>
+              <PlayerAvatar player={duel.player1} size="sm" />
+              <div className="font-semibold mt-2">{duel.player1.name}</div>
               <div className={cn("text-3xl font-bold mt-2", getTimeColor(player1Time))}>
                 {formatTime(player1Time)}
               </div>
@@ -240,12 +269,8 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel, onBonusUsed }: DuelModePro
             } : undefined}
           >
             <div className="text-center">
-              {duel.player2.imageUrl ? (
-                <img src={duel.player2.imageUrl} alt={duel.player2.name} className="w-16 h-16 mx-auto mb-2 rounded-full object-cover" />
-              ) : (
-                <div className="text-4xl mb-2">{duel.player2.emoji}</div>
-              )}
-              <div className="font-semibold">{duel.player2.name}</div>
+              <PlayerAvatar player={duel.player2} size="sm" />
+              <div className="font-semibold mt-2">{duel.player2.name}</div>
               <div className={cn("text-3xl font-bold mt-2", getTimeColor(player2Time))}>
                 {formatTime(player2Time)}
               </div>
@@ -256,22 +281,32 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel, onBonusUsed }: DuelModePro
         <Card className="p-8 bg-muted/50">
           <div className="text-center space-y-4">
             <div className="text-sm text-muted-foreground mb-2">
-              Question {currentQuestionIndex + 1} of {duel.category.questions.length}
+              Question {currentQuestionIndex + 1} of {shuffledQuestions.length}
             </div>
             {!questionFrozen ? (
               <>
                 {currentQuestion?.imageUrl && (
                   <div className="flex justify-center mb-4">
-                    <img 
-                      src={currentQuestion.imageUrl} 
-                      alt="Question" 
-                      className="max-w-md max-h-64 object-contain rounded-lg"
-                    />
+                    <div className="w-80 h-80 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                      <img 
+                        src={currentQuestion.imageUrl} 
+                        alt="Question" 
+                        className="w-full h-full object-cover"
+                        style={{ minWidth: '100%', minHeight: '100%' }}
+                      />
+                    </div>
                   </div>
                 )}
-                <div className="text-2xl font-semibold">
-                  {currentQuestion?.text || "No more questions"}
-                </div>
+                {currentQuestion?.text && (
+                  <div className="text-2xl font-semibold">
+                    {currentQuestion.text}
+                  </div>
+                )}
+                {!currentQuestion?.text && !currentQuestion?.imageUrl && (
+                  <div className="text-2xl font-semibold text-muted-foreground">
+                    No more questions
+                  </div>
+                )}
               </>
             ) : (
               <div className="text-2xl font-semibold text-muted-foreground">
@@ -314,7 +349,7 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel, onBonusUsed }: DuelModePro
                 backgroundColor: `hsl(var(--${duel.player1.color}) / 0.1)`
               }}
             >
-              {duel.player1.emoji} {duel.player1.name} Wins
+              {duel.player1.name} Wins
             </Button>
             <Button 
               onClick={() => onDuelEnd(duel.player2.id)} 
@@ -325,7 +360,7 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel, onBonusUsed }: DuelModePro
                 backgroundColor: `hsl(var(--${duel.player2.color}) / 0.1)`
               }}
             >
-              {duel.player2.emoji} {duel.player2.name} Wins
+              {duel.player2.name} Wins
             </Button>
           </div>
         </div>
