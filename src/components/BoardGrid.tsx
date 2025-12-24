@@ -71,9 +71,9 @@ export const BoardGrid = ({ squares, players, categories, onSquareClick, highlig
           bgColor = 'rgba(0, 149, 182, 0.6)';
           outlineColor = 'rgb(0, 0, 0)';
         } else if (isActivePlayerSquare) {
-          // Active player choosing - denim (no animation)
-          bgColor = 'rgba(21, 96, 189, 0.5)';
-          outlineColor = 'rgb(21, 96, 189)';
+          // Active player choosing - electric blue (no animation)
+          bgColor = 'rgba(125, 249, 255, 0.5)';
+          outlineColor = 'rgb(125, 249, 255)';
         } else if (hasStreak) {
           bgColor = 'hsl(var(--warning) / 0.4)';
           outlineColor = 'hsl(var(--warning))';
