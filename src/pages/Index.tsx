@@ -24,6 +24,7 @@ const Index = () => {
   const [showDraftDialog, setShowDraftDialog] = useState(false);
   const [showContinueDialog, setShowContinueDialog] = useState(false);
   const [duelWinnerId, setDuelWinnerId] = useState<string | null>(null);
+  const [draftedPlayerIds, setDraftedPlayerIds] = useState<string[]>([]);
 
   const getAdjacentSquares = (squareIds: string[]): string[] => {
     const adjacent = new Set<string>();
@@ -58,24 +59,45 @@ const Index = () => {
       return;
     }
     
-    const randomSquare = playerSquares[Math.floor(Math.random() * playerSquares.length)];
-    const playerId = randomSquare.ownerId!;
-    const territory = squares.filter(s => s.ownerId === playerId).map(s => s.id);
-    const availableChallenges = getAdjacentSquares(territory);
+    // Get active players (those still on the board)
+    const activePlayerIds = [...new Set(playerSquares.map(s => s.ownerId!))];
     
-    if (availableChallenges.length === 0) {
-      toast({ title: "This player has no adjacent opponents!", description: "Drafting another player..." });
-      draftRandomPlayer();
+    // Find players who haven't been drafted yet this round
+    let eligiblePlayerIds = activePlayerIds.filter(id => !draftedPlayerIds.includes(id));
+    
+    // If everyone has been drafted, reset the round
+    if (eligiblePlayerIds.length === 0) {
+      setDraftedPlayerIds([]);
+      eligiblePlayerIds = activePlayerIds;
+    }
+    
+    // Filter to only those with adjacent opponents
+    const eligibleWithOpponents = eligiblePlayerIds.filter(playerId => {
+      const territory = squares.filter(s => s.ownerId === playerId).map(s => s.id);
+      const adjacentChallenges = getAdjacentSquares(territory);
+      return adjacentChallenges.length > 0;
+    });
+    
+    if (eligibleWithOpponents.length === 0) {
+      toast({ title: "No eligible players with adjacent opponents!", variant: "destructive" });
       return;
     }
+    
+    // Pick a random player from eligible ones
+    const randomPlayerId = eligibleWithOpponents[Math.floor(Math.random() * eligibleWithOpponents.length)];
+    const territory = squares.filter(s => s.ownerId === randomPlayerId).map(s => s.id);
+    const availableChallenges = getAdjacentSquares(territory);
+    
+    // Mark this player as drafted
+    setDraftedPlayerIds(prev => [...prev, randomPlayerId]);
     
     // Reveal this player and all adjacent opponents
     const adjacentPlayerIds = availableChallenges
       .map(sqId => squares.find(s => s.id === sqId)?.ownerId)
       .filter((id): id is string => !!id);
-    setRevealedPlayerIds([playerId, ...adjacentPlayerIds]);
+    setRevealedPlayerIds([randomPlayerId, ...adjacentPlayerIds]);
     
-    setActiveTurn({ playerId, territory, availableChallenges });
+    setActiveTurn({ playerId: randomPlayerId, territory, availableChallenges });
     setGameState('draft');
     setShowDraftDialog(true);
   };
@@ -141,8 +163,8 @@ const Index = () => {
       square: selectedSquare,
       category: defenderCategory,
       currentPlayer: attacker.id,
-      player1Time: 45,
-      player2Time: 45,
+      player1Time: 60,
+      player2Time: 60,
       currentQuestionIndex: 0
     });
     setGameState('duel');
@@ -250,6 +272,7 @@ const Index = () => {
     setRevealedPlayerIds([]);
     setShowDraftDialog(false);
     setShowContinueDialog(false);
+    setDraftedPlayerIds([]);
   };
 
   const handleEditSettings = () => {
@@ -262,6 +285,7 @@ const Index = () => {
     setRevealedPlayerIds([]);
     setShowDraftDialog(false);
     setShowContinueDialog(false);
+    setDraftedPlayerIds([]);
   };
 
   if (gameState === 'setup') {
