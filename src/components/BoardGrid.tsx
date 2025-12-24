@@ -9,9 +9,10 @@ type BoardGridProps = {
   onSquareClick: (square: Square) => void;
   highlightedSquares?: string[];
   revealedPlayerIds?: string[];
+  activePlayerId?: string;
 };
 
-export const BoardGrid = ({ squares, players, categories, onSquareClick, highlightedSquares = [], revealedPlayerIds = [] }: BoardGridProps) => {
+export const BoardGrid = ({ squares, players, categories, onSquareClick, highlightedSquares = [], revealedPlayerIds = [], activePlayerId }: BoardGridProps) => {
   const rows = Math.max(...squares.map(s => s.row)) + 1;
   const cols = Math.max(...squares.map(s => s.col)) + 1;
 
@@ -54,11 +55,33 @@ export const BoardGrid = ({ squares, players, categories, onSquareClick, highlig
         const isHighlighted = highlightedSquares.includes(square.id);
         const shouldShowCategory = owner && revealedPlayerIds.includes(owner.id);
         const hasStreak = (owner?.winStreak || 0) >= 3;
+        const isActivePlayerSquare = owner && owner.id === activePlayerId;
         
         const borderTop = isAdjacentToSameOwner(square, 'top');
         const borderRight = isAdjacentToSameOwner(square, 'right');
         const borderBottom = isAdjacentToSameOwner(square, 'bottom');
         const borderLeft = isAdjacentToSameOwner(square, 'left');
+        
+        // Determine background and outline colors
+        let bgColor = undefined;
+        let outlineColor = undefined;
+        
+        if (isHighlighted) {
+          // Duel options - dark blue
+          bgColor = 'rgba(30, 58, 138, 0.7)';
+          outlineColor = 'rgb(30, 58, 138)';
+        } else if (isActivePlayerSquare) {
+          // Active player choosing - purple
+          bgColor = 'rgba(147, 51, 234, 0.5)';
+          outlineColor = 'rgb(147, 51, 234)';
+        } else if (hasStreak) {
+          bgColor = 'hsl(var(--warning) / 0.4)';
+          outlineColor = 'hsl(var(--warning))';
+        } else if (owner) {
+          // Other owned squares - light blue
+          bgColor = 'rgba(147, 197, 253, 0.4)';
+          outlineColor = 'rgb(147, 197, 253)';
+        }
         
         return (
           <button
@@ -68,17 +91,12 @@ export const BoardGrid = ({ squares, players, categories, onSquareClick, highlig
               "aspect-square transition-all duration-200 relative",
               "flex flex-col items-center justify-center p-2 text-center",
               "hover:scale-105 hover:shadow-lg active:scale-95",
-              !owner && "bg-neutral/20 border-2 border-neutral rounded-lg",
-              isHighlighted && "ring-4 ring-blue-600 shadow-[0_0_20px_rgba(37,99,235,0.6)]"
+              !owner && "bg-neutral/20 border-2 border-neutral rounded-lg"
             )}
             style={{
-              backgroundColor: hasStreak
-                ? 'hsl(var(--warning) / 0.4)'
-                : owner 
-                  ? `hsl(var(--${owner.color}) / 0.2)` 
-                  : undefined,
+              backgroundColor: bgColor,
               ...(owner && {
-                outline: `6px solid ${hasStreak ? 'hsl(var(--warning))' : `hsl(var(--${owner.color}))`}`,
+                outline: `6px solid ${outlineColor}`,
                 outlineOffset: '-6px',
                 marginTop: borderTop ? '-6px' : '0',
                 marginRight: borderRight ? '-6px' : '0',
@@ -92,6 +110,9 @@ export const BoardGrid = ({ squares, players, categories, onSquareClick, highlig
               }),
               ...(isHighlighted && {
                 animation: 'pulse-blue 1.5s ease-in-out infinite',
+              }),
+              ...(isActivePlayerSquare && {
+                animation: 'pulse-purple 1.5s ease-in-out infinite',
               })
             }}
           >
