@@ -2,23 +2,23 @@
 
 @keyframes pulse-blue {
   0%, 100% {
-    box-shadow: 0 0 25px 10px rgba(30, 58, 138, 0.8);
-    background-color: rgba(30, 58, 138, 0.6);
+    box-shadow: 0 0 25px 10px rgba(0, 149, 182, 0.7);
+    background-color: rgba(0, 149, 182, 0.5);
   }
   50% {
-    box-shadow: 0 0 45px 20px rgba(30, 58, 138, 1);
-    background-color: rgba(30, 58, 138, 0.85);
+    box-shadow: 0 0 45px 20px rgba(0, 149, 182, 1);
+    background-color: rgba(0, 149, 182, 0.8);
   }
 }
 
 @keyframes pulse-purple {
   0%, 100% {
-    box-shadow: 0 0 25px 10px rgba(147, 51, 234, 0.6);
-    background-color: rgba(147, 51, 234, 0.4);
+    box-shadow: 0 0 25px 10px rgba(64, 224, 208, 0.5);
+    background-color: rgba(64, 224, 208, 0.4);
   }
   50% {
-    box-shadow: 0 0 40px 15px rgba(147, 51, 234, 0.9);
-    background-color: rgba(147, 51, 234, 0.65);
+    box-shadow: 0 0 40px 15px rgba(64, 224, 208, 0.85);
+    background-color: rgba(64, 224, 208, 0.6);
   }
 }
 @tailwind components;

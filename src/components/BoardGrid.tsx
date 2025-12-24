@@ -67,20 +67,20 @@ export const BoardGrid = ({ squares, players, categories, onSquareClick, highlig
         let outlineColor = undefined;
         
         if (isHighlighted) {
-          // Duel options - dark blue
-          bgColor = 'rgba(30, 58, 138, 0.7)';
-          outlineColor = 'rgb(30, 58, 138)';
+          // Duel options - bondi blue with black outline
+          bgColor = 'rgba(0, 149, 182, 0.6)';
+          outlineColor = 'rgb(0, 0, 0)';
         } else if (isActivePlayerSquare) {
-          // Active player choosing - purple
-          bgColor = 'rgba(147, 51, 234, 0.5)';
-          outlineColor = 'rgb(147, 51, 234)';
+          // Active player choosing - turquoise
+          bgColor = 'rgba(64, 224, 208, 0.5)';
+          outlineColor = 'rgb(64, 224, 208)';
         } else if (hasStreak) {
           bgColor = 'hsl(var(--warning) / 0.4)';
           outlineColor = 'hsl(var(--warning))';
         } else if (owner) {
-          // Other owned squares - light blue
-          bgColor = 'rgba(147, 197, 253, 0.4)';
-          outlineColor = 'rgb(147, 197, 253)';
+          // Other owned squares - royal blue
+          bgColor = 'rgba(65, 105, 225, 0.4)';
+          outlineColor = 'rgb(65, 105, 225)';
         }
         
         return (
