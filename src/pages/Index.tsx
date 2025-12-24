@@ -8,7 +8,7 @@ import { ContinueTurnDialog } from "@/components/ContinueTurnDialog";
 import { DraftPlayerDialog } from "@/components/DraftPlayerDialog";
 import { Button } from "@/components/ui/button";
 import { Player, Category, Square, GameState, DuelState, ActiveTurn } from "@/types/game";
-import { Settings } from "lucide-react";
+import { Settings, User } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 const Index = () => {
@@ -343,7 +343,18 @@ const Index = () => {
                 }}
               >
                 <div className="flex items-center gap-3">
-                  <div className="text-3xl">{player.emoji}</div>
+                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-background shadow-md">
+                    {player.imageUrl ? (
+                      <img 
+                        src={player.imageUrl} 
+                        alt={player.name}
+                        className="w-full h-full object-cover"
+                        style={{ minWidth: '100%', minHeight: '100%' }}
+                      />
+                    ) : (
+                      <User className="w-6 h-6 text-muted-foreground" />
+                    )}
+                  </div>
                   <div>
                     <div 
                       className="font-semibold"
