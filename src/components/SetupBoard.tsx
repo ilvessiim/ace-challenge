@@ -33,21 +33,26 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
   );
   const [categories, setCategories] = useState<Category[]>(existingCategories || []);
   const [newCategoryName, setNewCategoryName] = useState('');
-  const [newQuestionTexts, setNewQuestionTexts] = useState<{ [key: number]: string }>({});
   const [questionImages, setQuestionImages] = useState<{ [key: number]: string }>({});
   const [playerImages, setPlayerImages] = useState<{ [key: string]: string }>({});
   const [nextQuestionId, setNextQuestionId] = useState(0);
   const [showCategoryAssignment, setShowCategoryAssignment] = useState(false);
 
-  const handleQuestionImageUpload = (questionId: number, file: File) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setQuestionImages(prev => ({
-        ...prev,
-        [questionId]: reader.result as string
-      }));
-    };
-    reader.readAsDataURL(file);
+  const handleMultipleImageUpload = (files: FileList) => {
+    const startId = nextQuestionId;
+    Array.from(files).forEach((file, index) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const imageUrl = reader.result as string;
+        const id = startId + index;
+        setQuestionImages(prev => ({
+          ...prev,
+          [id]: imageUrl
+        }));
+      };
+      reader.readAsDataURL(file);
+    });
+    setNextQuestionId(startId + files.length);
   };
 
   const handlePlayerImageUpload = (playerId: string, file: File) => {
@@ -58,7 +63,6 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
         ...prev,
         [playerId]: imageUrl
       }));
-      // Immediately set the imageUrl on the player
       setPlayers(prev => prev.map(p => 
         p.id === playerId ? { ...p, imageUrl } : p
       ));
@@ -66,18 +70,7 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
     reader.readAsDataURL(file);
   };
 
-  const addQuestion = () => {
-    const id = nextQuestionId;
-    setNextQuestionId(id + 1);
-    setNewQuestionTexts(prev => ({ ...prev, [id]: '' }));
-  };
-
   const removeQuestion = (id: number) => {
-    setNewQuestionTexts(prev => {
-      const updated = { ...prev };
-      delete updated[id];
-      return updated;
-    });
     setQuestionImages(prev => {
       const updated = { ...prev };
       delete updated[id];
@@ -85,38 +78,24 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
     });
   };
 
-  const updateQuestionText = (id: number, text: string) => {
-    setNewQuestionTexts(prev => ({ ...prev, [id]: text }));
-  };
-
-  
-  
   const addCategory = () => {
     if (!newCategoryName.trim()) {
       toast({ title: "Category name required", variant: "destructive" });
       return;
     }
     
-    const questionIds = Object.keys(newQuestionTexts).map(Number);
-    const questions: Question[] = [];
+    const questionIds = Object.keys(questionImages).map(Number);
     
-    questionIds.forEach(id => {
-      const text = newQuestionTexts[id]?.trim() || '';
-      const imageUrl = questionImages[id];
-      
-      if (text || imageUrl) {
-        questions.push({
-          id: `q${Date.now()}-${id}`,
-          text,
-          imageUrl
-        });
-      }
-    });
-
-    if (questions.length === 0) {
-      toast({ title: "Add at least one question with text or image", variant: "destructive" });
+    if (questionIds.length === 0) {
+      toast({ title: "Upload at least one photo", variant: "destructive" });
       return;
     }
+
+    const questions: Question[] = questionIds.map(id => ({
+      id: `q${Date.now()}-${id}`,
+      text: '',
+      imageUrl: questionImages[id]
+    }));
 
     const newCategory: Category = {
       id: `cat-${Date.now()}`,
@@ -126,27 +105,9 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
 
     setCategories([...categories, newCategory]);
     setNewCategoryName('');
-    setNewQuestionTexts({});
     setQuestionImages({});
     setNextQuestionId(0);
     toast({ title: "Category added!" });
-  };
-
-  const createHardcodedCategory = () => {
-    setNewCategoryName("Animals");
-    
-    setNewQuestionTexts({
-      0: "What is this animal?",
-      1: "Can it fly?",
-    });
-    
-    setQuestionImages({
-      0: "https://example.com/dog.jpg",
-    });
-    
-    setNextQuestionId(2);
-    
-    addCategory();
   };
 
   const removeCategory = (id: string) => {
@@ -176,13 +137,6 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
 
   const updatePlayer = (id: string, field: 'name' | 'emoji' | 'categoryId', value: string) => {
     setPlayers(players.map(p => p.id === id ? { ...p, [field]: value === '' ? null : value } : p));
-  };
-
-  const applyPlayerImage = (id: string) => {
-    const imageUrl = playerImages[id];
-    if (imageUrl) {
-      setPlayers(players.map(p => p.id === id ? { ...p, imageUrl } : p));
-    }
   };
 
   const handleContinue = () => {
@@ -297,36 +251,57 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
         <Card className="p-6 space-y-4">
           <h2 className="text-2xl font-bold">Categories</h2>
           <div className="space-y-4">
-            <div><Label>Category Name</Label><Input value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="e.g., World Capitals" /></div>
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <Label>Questions (text or image)</Label>
-                <Button onClick={addQuestion} variant="outline" size="sm"><Plus className="w-4 h-4 mr-2" />Add Question</Button>
-              </div>
-              {Object.keys(newQuestionTexts).length === 0 && <p className="text-sm text-muted-foreground">Click “Add Question” to start adding questions</p>}
-              <div className="space-y-2">
-                {Object.keys(newQuestionTexts).map(key => {
-                  const id = Number(key);
-                  return (
-                    <div key={id} className="flex items-start gap-2 p-3 bg-muted/50 rounded">
-                      <div className="flex-1 space-y-2">
-                        <Input placeholder="Question text (optional)" value={newQuestionTexts[id] || ''} onChange={(e) => updateQuestionText(id, e.target.value)} />
-                        <div className="flex items-center gap-2">
-                          <Label htmlFor={`q-image-${id}`} className="cursor-pointer">
-                            <Button type="button" variant="outline" size="sm" asChild><span>{questionImages[id] ? '✓ Image' : 'Upload Image (Optional)'}</span></Button>
-                          </Label>
-                          <input id={`q-image-${id}`} type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) handleQuestionImageUpload(id, file); }} />
-                          {questionImages[id] && <img src={questionImages[id]} alt="Question" className="w-12 h-12 rounded object-cover" />}
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="sm" onClick={() => removeQuestion(id)}><X className="w-4 h-4" /></Button>
-                    </div>
-                  );
-                })}
-              </div>
+              <Label>Category Name</Label>
+              <Input value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="e.g., World Capitals" />
             </div>
-            <Button onClick={createHardcodedCategory}>Create Hardcoded Category</Button>
-            <Button onClick={addCategory} className="w-full"><Plus className="w-4 h-4 mr-2" />Add Category</Button>
+            <div>
+              <Label className="mb-2 block">Upload Photos (each photo becomes a question)</Label>
+              <Label htmlFor="multi-image-upload" className="cursor-pointer">
+                <Button type="button" variant="outline" className="w-full" asChild>
+                  <span><Plus className="w-4 h-4 mr-2" />Upload Multiple Photos</span>
+                </Button>
+              </Label>
+              <input 
+                id="multi-image-upload" 
+                type="file" 
+                accept="image/*" 
+                multiple 
+                className="hidden" 
+                onChange={(e) => { 
+                  const files = e.target.files; 
+                  if (files && files.length > 0) { 
+                    handleMultipleImageUpload(files); 
+                  } 
+                }} 
+              />
+            </div>
+            {Object.keys(questionImages).length > 0 && (
+              <div>
+                <Label className="mb-2 block">Uploaded Photos ({Object.keys(questionImages).length})</Label>
+                <div className="grid grid-cols-4 gap-2">
+                  {Object.keys(questionImages).map(key => {
+                    const id = Number(key);
+                    return (
+                      <div key={id} className="relative group">
+                        <img src={questionImages[id]} alt="Question" className="w-full aspect-square rounded object-cover" />
+                        <Button 
+                          variant="destructive" 
+                          size="sm" 
+                          className="absolute top-1 right-1 w-6 h-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removeQuestion(id)}
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            <Button onClick={addCategory} className="w-full" disabled={!newCategoryName.trim() || Object.keys(questionImages).length === 0}>
+              <Plus className="w-4 h-4 mr-2" />Add Category
+            </Button>
           </div>
 
           {categories.length > 0 && (
