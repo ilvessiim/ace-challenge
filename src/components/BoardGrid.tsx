@@ -69,7 +69,7 @@ export const BoardGrid = ({ squares, players, categories, onSquareClick, highlig
               "flex flex-col items-center justify-center p-2 text-center",
               "hover:scale-105 hover:shadow-lg active:scale-95",
               !owner && "bg-neutral/20 border-2 border-neutral rounded-lg",
-              isHighlighted && "ring-4 ring-warning animate-pulse"
+              isHighlighted && "ring-4 ring-blue-600 shadow-[0_0_20px_rgba(37,99,235,0.6)]"
             )}
             style={{
               backgroundColor: hasStreak
@@ -89,12 +89,15 @@ export const BoardGrid = ({ squares, players, categories, onSquareClick, highlig
                 borderBottomLeftRadius: !borderBottom && !borderLeft ? '0.75rem' : '0',
                 borderBottomRightRadius: !borderBottom && !borderRight ? '0.75rem' : '0',
                 zIndex: 1,
+              }),
+              ...(isHighlighted && {
+                animation: 'pulse-blue 1.5s ease-in-out infinite',
               })
             }}
           >
             {owner && (
               <div className="text-center w-full flex flex-col items-center">
-                <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center overflow-hidden border-3 border-background shadow-lg mb-2">
+                <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center overflow-hidden border-4 border-background shadow-lg mb-2">
                   {owner.imageUrl ? (
                     <img 
                       src={owner.imageUrl} 
@@ -103,14 +106,14 @@ export const BoardGrid = ({ squares, players, categories, onSquareClick, highlig
                       style={{ minWidth: '100%', minHeight: '100%' }}
                     />
                   ) : (
-                    <User className="w-10 h-10 text-muted-foreground" />
+                    <User className="w-12 h-12 text-muted-foreground" />
                   )}
                 </div>
-                <div className="text-sm font-semibold truncate px-1">{owner.name}</div>
+                <div className="text-base font-bold truncate px-1">{owner.name}</div>
               </div>
             )}
             {category && shouldShowCategory && (
-              <div className="text-xs font-semibold text-foreground/80 line-clamp-2">
+              <div className="text-sm font-bold text-foreground/90 line-clamp-2 mt-1">
                 {category.name}
               </div>
             )}
