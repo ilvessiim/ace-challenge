@@ -2,12 +2,12 @@
 
 @keyframes pulse-blue {
   0%, 100% {
-    box-shadow: 0 0 20px 8px rgba(30, 64, 175, 0.6);
-    background-color: rgba(30, 64, 175, 0.4);
+    box-shadow: 0 0 25px 10px rgba(30, 58, 138, 0.7);
+    background-color: rgba(30, 58, 138, 0.5);
   }
   50% {
-    box-shadow: 0 0 35px 15px rgba(30, 64, 175, 0.9);
-    background-color: rgba(30, 64, 175, 0.6);
+    box-shadow: 0 0 40px 18px rgba(30, 58, 138, 1);
+    background-color: rgba(30, 58, 138, 0.75);
   }
 }
 @tailwind components;
