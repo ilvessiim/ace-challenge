@@ -380,6 +380,7 @@ const Index = () => {
           onSquareClick={handleSquareClick}
           highlightedSquares={activeTurn?.availableChallenges}
           revealedPlayerIds={revealedPlayerIds}
+          activePlayerId={activeTurn?.playerId}
         />
 
         {showDuelDialog && selectedSquare && activeTurn && (
