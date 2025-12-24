@@ -23,8 +23,8 @@ const shuffleArray = <T,>(array: T[]): T[] => {
 };
 
 export const DuelMode = ({ duel, onDuelEnd, onCancel, onBonusUsed }: DuelModeProps) => {
-  const [player1Time, setPlayer1Time] = useState(duel.player1Time);
-  const [player2Time, setPlayer2Time] = useState(duel.player2Time);
+  const [player1Time, setPlayer1Time] = useState(60);
+  const [player2Time, setPlayer2Time] = useState(60);
   const [currentPlayer, setCurrentPlayer] = useState(duel.currentPlayer);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isRunning, setIsRunning] = useState(false);

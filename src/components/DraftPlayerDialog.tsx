@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Player } from "@/types/game";
-import { Dices } from "lucide-react";
+import { Dices, User } from "lucide-react";
 
 type DraftPlayerDialogProps = {
   draftedPlayer: Player;
@@ -18,7 +18,18 @@ export const DraftPlayerDialog = ({ draftedPlayer, onStart }: DraftPlayerDialogP
           </div>
           <div>
             <h3 className="text-xl font-bold mb-4">Player Drafted!</h3>
-            <div className="text-6xl mb-3">{draftedPlayer.emoji}</div>
+            <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center overflow-hidden mx-auto mb-3 border-2 border-background shadow-lg">
+              {draftedPlayer.imageUrl ? (
+                <img 
+                  src={draftedPlayer.imageUrl} 
+                  alt={draftedPlayer.name} 
+                  className="w-full h-full object-cover"
+                  style={{ minWidth: '100%', minHeight: '100%' }}
+                />
+              ) : (
+                <User className="w-12 h-12 text-muted-foreground" />
+              )}
+            </div>
             <div className="text-2xl font-semibold">{draftedPlayer.name}</div>
             <p className="text-muted-foreground mt-2">
               Select an adjacent square to challenge
