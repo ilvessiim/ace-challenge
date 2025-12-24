@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Plus, X } from "lucide-react";
+import { Plus, X, User } from "lucide-react";
 import { Player, Category, Square, Question } from "@/types/game";
 import { toast } from "@/hooks/use-toast";
 
@@ -13,6 +13,16 @@ type SetupBoardProps = {
   existingCategories?: Category[];
 };
 
+// Fisher-Yates shuffle
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
 export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }: SetupBoardProps) => {
   const [rows, setRows] = useState(3);
   const [cols, setCols] = useState(3);
@@ -20,15 +30,15 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
     existingPlayers && existingPlayers.length > 0
       ? existingPlayers.map(p => ({ ...p, winStreak: 0 }))
       : [
-          { id: '1', name: 'Player 1', emoji: '😎', color: 'player1', categoryId: null, winStreak: 0 },
-          { id: '2', name: 'Player 2', emoji: '🎮', color: 'player1', categoryId: null, winStreak: 0 },
-          { id: '3', name: 'Player 3', emoji: '👍', color: 'player1', categoryId: null, winStreak: 0 },
-          { id: '4', name: 'Player 4', emoji: '🐶', color: 'player1', categoryId: null, winStreak: 0 },
-          { id: '5', name: 'Player 5', emoji: '💀', color: 'player1', categoryId: null, winStreak: 0 },
-          { id: '6', name: 'Player 6', emoji: '🐔', color: 'player1', categoryId: null, winStreak: 0 },
-          { id: '7', name: 'Player 7', emoji: '🐍', color: 'player1', categoryId: null, winStreak: 0 },
-          { id: '8', name: 'Player 8', emoji: '🐣', color: 'player1', categoryId: null, winStreak: 0 },
-          { id: '9', name: 'Player 9', emoji: '☀️', color: 'player1', categoryId: null, winStreak: 0 }
+          { id: '1', name: 'Player 1', emoji: '👤', color: 'player1', categoryId: null, winStreak: 0 },
+          { id: '2', name: 'Player 2', emoji: '👤', color: 'player1', categoryId: null, winStreak: 0 },
+          { id: '3', name: 'Player 3', emoji: '👤', color: 'player1', categoryId: null, winStreak: 0 },
+          { id: '4', name: 'Player 4', emoji: '👤', color: 'player1', categoryId: null, winStreak: 0 },
+          { id: '5', name: 'Player 5', emoji: '👤', color: 'player1', categoryId: null, winStreak: 0 },
+          { id: '6', name: 'Player 6', emoji: '👤', color: 'player1', categoryId: null, winStreak: 0 },
+          { id: '7', name: 'Player 7', emoji: '👤', color: 'player1', categoryId: null, winStreak: 0 },
+          { id: '8', name: 'Player 8', emoji: '👤', color: 'player1', categoryId: null, winStreak: 0 },
+          { id: '9', name: 'Player 9', emoji: '👤', color: 'player1', categoryId: null, winStreak: 0 }
         ]
   );
   const [categories, setCategories] = useState<Category[]>(existingCategories || []);
@@ -97,10 +107,13 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
       imageUrl: questionImages[id]
     }));
 
+    // Shuffle questions when adding category
+    const shuffledQuestions = shuffleArray(questions);
+
     const newCategory: Category = {
       id: `cat-${Date.now()}`,
       name: newCategoryName,
-      questions
+      questions: shuffledQuestions
     };
 
     setCategories([...categories, newCategory]);
@@ -120,7 +133,7 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
     setPlayers([...players, {
       id: nextId,
       name: `Player ${nextId}`,
-      emoji: '🎯',
+      emoji: '👤',
       color: `player${colorIndex}`,
       categoryId: null,
       winStreak: 0
@@ -133,10 +146,19 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
       return;
     }
     setPlayers(players.filter(p => p.id !== id));
+    setPlayerImages(prev => {
+      const updated = { ...prev };
+      delete updated[id];
+      return updated;
+    });
   };
 
-  const updatePlayer = (id: string, field: 'name' | 'emoji' | 'categoryId', value: string) => {
-    setPlayers(players.map(p => p.id === id ? { ...p, [field]: value === '' ? null : value } : p));
+  const updatePlayerName = (id: string, name: string) => {
+    setPlayers(players.map(p => p.id === id ? { ...p, name } : p));
+  };
+
+  const updatePlayerCategory = (id: string, categoryId: string) => {
+    setPlayers(players.map(p => p.id === id ? { ...p, categoryId: categoryId === '' ? null : categoryId } : p));
   };
 
   const handleContinue = () => {
@@ -163,6 +185,12 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
       toast({ title: "All players must select a category", variant: "destructive" });
       return;
     }
+
+    // Shuffle questions in each category before starting the game
+    const shuffledCategories = categories.map(cat => ({
+      ...cat,
+      questions: shuffleArray(cat.questions)
+    }));
 
     const initialSquares: Square[] = [];
     for (let r = 0; r < rows; r++) {
@@ -194,7 +222,7 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
       return playerSquare || sq;
     });
 
-    onStartGame(rows, cols, players, categories, finalSquares);
+    onStartGame(rows, cols, players, shuffledCategories, finalSquares);
   };
 
   return (
@@ -227,25 +255,48 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
             <Button onClick={addPlayer} variant="outline" size="sm"><Plus className="w-4 h-4 mr-2" />Add Player</Button>
           </div>
           {players.map(player => (
-            <div key={player.id} className="space-y-2">
-              <div className="flex gap-4 items-end">
-                <div className="flex-1 grid grid-cols-4 gap-4">
-                  <div><Label>Emoji</Label><Input value={player.emoji} onChange={(e) => updatePlayer(player.id, 'emoji', e.target.value)} maxLength={2} /></div>
-                  <div className="col-span-3"><Label>Name</Label><Input value={player.name} onChange={(e) => updatePlayer(player.id, 'name', e.target.value)} /></div>
+            <div key={player.id} className="flex gap-4 items-center p-3 bg-muted/30 rounded-lg">
+              <Label htmlFor={`player-image-${player.id}`} className="cursor-pointer shrink-0">
+                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center overflow-hidden border-2 border-border hover:border-primary transition-colors">
+                  {player.imageUrl ? (
+                    <img 
+                      src={player.imageUrl} 
+                      alt={player.name} 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-8 h-8 text-muted-foreground" />
+                  )}
                 </div>
-                {players.length > 2 && <Button variant="ghost" size="sm" onClick={() => removePlayer(player.id)}><X className="w-4 h-4" /></Button>}
+                <input 
+                  id={`player-image-${player.id}`} 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={(e) => { 
+                    const file = e.target.files?.[0]; 
+                    if (file) { 
+                      handlePlayerImageUpload(player.id, file); 
+                    } 
+                  }} 
+                />
+              </Label>
+              <div className="flex-1">
+                <Label className="text-xs text-muted-foreground">Player Name</Label>
+                <Input 
+                  value={player.name} 
+                  onChange={(e) => updatePlayerName(player.id, e.target.value)} 
+                  placeholder="Enter name"
+                />
               </div>
-              <div className="flex items-center gap-2">
-                <Label htmlFor={`player-image-${player.id}`} className="cursor-pointer">
-                  <Button type="button" variant="outline" size="sm" asChild>
-                    <span>{player.imageUrl || playerImages[player.id] ? '✓ Picture Set' : 'Upload Picture (Optional)'}</span>
-                  </Button>
-                </Label>
-                <input id={`player-image-${player.id}`} type="file" accept="image/*" className="hidden" onChange={(e) => { const file = e.target.files?.[0]; if (file) { handlePlayerImageUpload(player.id, file); } }} />
-                {(player.imageUrl || playerImages[player.id]) && <img src={player.imageUrl || playerImages[player.id]} alt={player.name} className="w-10 h-10 rounded-full object-cover" />}
-              </div>
+              {players.length > 2 && (
+                <Button variant="ghost" size="sm" onClick={() => removePlayer(player.id)}>
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
             </div>
           ))}
+          <p className="text-xs text-muted-foreground">Click on the avatar to upload a profile picture</p>
         </Card>
 
         <Card className="p-6 space-y-4">
@@ -325,12 +376,25 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
               <h2 className="text-2xl font-bold">Assign Categories to Players</h2>
               <p className="text-sm text-muted-foreground">Each player chooses their own category to defend</p>
               {players.map(player => (
-                <div key={player.id} className="space-y-2">
-                  <Label>{player.emoji} {player.name}</Label>
-                  <select className="w-full p-2 rounded-md border bg-background text-foreground" value={player.categoryId || ''} onChange={(e) => updatePlayer(player.id, 'categoryId', e.target.value)}>
-                    <option value="">Select Category</option>
-                    {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
-                  </select>
+                <div key={player.id} className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                    {player.imageUrl ? (
+                      <img src={player.imageUrl} alt={player.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-5 h-5 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <Label className="text-sm">{player.name}</Label>
+                    <select 
+                      className="w-full p-2 rounded-md border bg-background text-foreground" 
+                      value={player.categoryId || ''} 
+                      onChange={(e) => updatePlayerCategory(player.id, e.target.value)}
+                    >
+                      <option value="">Select Category</option>
+                      {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+                    </select>
+                  </div>
                 </div>
               ))}
             </Card>
