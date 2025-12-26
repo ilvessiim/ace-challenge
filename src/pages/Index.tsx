@@ -418,14 +418,26 @@ const Index = () => {
           />
         )}
 
-        {showContinueDialog && duelWinnerId && (
-          <ContinueTurnDialog
-            winner={players.find(p => p.id === duelWinnerId)!}
-            newTerritory={squares.filter(s => s.ownerId === duelWinnerId).map(s => s.id)}
-            onContinue={handleContinueTurn}
-            onEndTurn={handleEndTurn}
-          />
-        )}
+        {showContinueDialog && duelWinnerId && (() => {
+          const newTerritory = squares.filter(s => s.ownerId === duelWinnerId).map(s => s.id);
+          const adjacentSquareIds = getAdjacentSquares(newTerritory);
+          const challengeOptions = adjacentSquareIds.map(sqId => {
+            const sq = squares.find(s => s.id === sqId);
+            const player = players.find(p => p.id === sq?.ownerId);
+            const category = categories.find(c => c.id === player?.categoryId);
+            return player && category ? { player, category, squareId: sqId } : null;
+          }).filter((opt): opt is { player: Player; category: Category; squareId: string } => opt !== null);
+
+          return (
+            <ContinueTurnDialog
+              winner={players.find(p => p.id === duelWinnerId)!}
+              newTerritory={newTerritory}
+              availableChallenges={challengeOptions}
+              onContinue={handleContinueTurn}
+              onEndTurn={handleEndTurn}
+            />
+          );
+        })()}
       </div>
     </div>
   );
