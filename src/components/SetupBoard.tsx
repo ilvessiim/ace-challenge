@@ -107,13 +107,10 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
       imageUrl: questionImages[id]
     }));
 
-    // Shuffle questions when adding category
-    const shuffledQuestions = shuffleArray(questions);
-
     const newCategory: Category = {
       id: `cat-${Date.now()}`,
       name: newCategoryName,
-      questions: shuffledQuestions
+      questions
     };
 
     setCategories([...categories, newCategory]);
@@ -186,11 +183,6 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
       return;
     }
 
-    // Shuffle questions in each category before starting the game
-    const shuffledCategories = categories.map(cat => ({
-      ...cat,
-      questions: shuffleArray(cat.questions)
-    }));
 
     const initialSquares: Square[] = [];
     for (let r = 0; r < rows; r++) {
@@ -222,7 +214,7 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
       return playerSquare || sq;
     });
 
-    onStartGame(rows, cols, players, shuffledCategories, finalSquares);
+    onStartGame(rows, cols, players, categories, finalSquares);
   };
 
   return (

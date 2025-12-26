@@ -33,10 +33,9 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel, onBonusUsed }: DuelModePro
   const [player2BonusUsed, setPlayer2BonusUsed] = useState(false);
   const [showReadyScreen, setShowReadyScreen] = useState(true);
 
-  // Shuffle questions once when duel starts
-  const shuffledQuestions = useMemo(() => shuffleArray(duel.category.questions), [duel.category.questions]);
+  const questions = duel.category.questions;
 
-  const currentQuestion = shuffledQuestions[currentQuestionIndex];
+  const currentQuestion = questions[currentQuestionIndex];
   const isPlayer1Turn = currentPlayer === duel.player1.id;
   const currentPlayerObj = isPlayer1Turn ? duel.player1 : duel.player2;
   const currentPlayerBonusUsed = isPlayer1Turn ? player1BonusUsed : player2BonusUsed;
@@ -90,7 +89,7 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel, onBonusUsed }: DuelModePro
   const handleCorrect = () => {
     setIsRunning(false);
     setTimeout(() => {
-      if (currentQuestionIndex < shuffledQuestions.length - 1) {
+      if (currentQuestionIndex < questions.length - 1) {
         setCurrentQuestionIndex(prev => prev + 1);
         setCurrentPlayer(isPlayer1Turn ? duel.player2.id : duel.player1.id);
         setIsRunning(true);
@@ -105,7 +104,7 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel, onBonusUsed }: DuelModePro
   const handleSkip = () => {
     setQuestionFrozen(true);
     setTimeout(() => {
-      if (currentQuestionIndex < shuffledQuestions.length - 1) {
+      if (currentQuestionIndex < questions.length - 1) {
         setCurrentQuestionIndex(prev => prev + 1);
       } else {
         setCurrentQuestionIndex(0);
@@ -281,7 +280,7 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel, onBonusUsed }: DuelModePro
         <Card className="p-8 bg-muted/50">
           <div className="text-center space-y-4">
             <div className="text-sm text-muted-foreground mb-2">
-              Question {currentQuestionIndex + 1} of {shuffledQuestions.length}
+              Question {currentQuestionIndex + 1} of {questions.length}
             </div>
             {!questionFrozen ? (
               <>
