@@ -59,11 +59,17 @@ const Index = () => {
       return;
     }
     
-    // Get active players (those still on the board)
+    // Get active players (those still on the board with at least 1 square)
     const activePlayerIds = [...new Set(playerSquares.map(s => s.ownerId!))];
     
+    // Remove eliminated players from drafted list (they're no longer in the game)
+    const stillInGameDrafted = draftedPlayerIds.filter(id => activePlayerIds.includes(id));
+    if (stillInGameDrafted.length !== draftedPlayerIds.length) {
+      setDraftedPlayerIds(stillInGameDrafted);
+    }
+    
     // Find players who haven't been drafted yet this round
-    let eligiblePlayerIds = activePlayerIds.filter(id => !draftedPlayerIds.includes(id));
+    let eligiblePlayerIds = activePlayerIds.filter(id => !stillInGameDrafted.includes(id));
     
     // If everyone has been drafted, reset the round
     if (eligiblePlayerIds.length === 0) {
@@ -186,18 +192,27 @@ const Index = () => {
     const capturedSquares = squares.filter(s => s.ownerId === loserId).length;
     setSquares(updatedSquares);
     
-    // Update win streaks
+    // Update win streaks - only increment winner's streak, don't transfer from loser
+    // Winner gets +1 to their own streak, loser resets to 0
     let updatedPlayers = players.map(p => {
       if (p.id === winnerId) {
+        // Winner increments their own streak
         return { ...p, winStreak: p.winStreak + 1 };
       }
       if (p.id === loserId) {
+        // Loser resets their streak, loses category, and is effectively eliminated
         return { ...p, winStreak: 0, categoryId: null };
       }
       return p;
     });
     
     setPlayers(updatedPlayers);
+    
+    // Log elimination for debugging
+    const loserSquaresAfter = updatedSquares.filter(s => s.ownerId === loserId).length;
+    if (loserSquaresAfter === 0) {
+      console.log(`${loser?.name} has been eliminated!`);
+    }
     
     setDuelWinnerId(winnerId);
     setGameState('continue');
