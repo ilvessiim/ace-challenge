@@ -197,26 +197,26 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
       }
     }
 
-    // Prioritize: corners first, then bottom rows, then remaining squares
+    // Prioritize filling: center/top first, leave corners empty, then leave bottom rows empty
     const getSquarePriority = (sq: Square): number => {
       const isTopLeft = sq.row === 0 && sq.col === 0;
       const isTopRight = sq.row === 0 && sq.col === cols - 1;
       const isBottomLeft = sq.row === rows - 1 && sq.col === 0;
       const isBottomRight = sq.row === rows - 1 && sq.col === cols - 1;
       
-      // Corners get highest priority (lowest number)
+      // Corners get lowest priority (highest number) - leave empty first
       if (isTopLeft || isTopRight || isBottomLeft || isBottomRight) {
-        return 0;
+        return 1000;
       }
       
-      // Bottom rows get next priority (lower row number = higher in grid = lower priority for filling)
-      // So we want higher row numbers (bottom) to have lower priority values
-      const rowPriority = (rows - 1 - sq.row) * 10; // Bottom rows first
+      // Bottom rows get lower priority (higher number) - leave empty after corners
+      // Higher row number = bottom = should be left empty = higher priority number
+      const rowPriority = sq.row * 10;
       
-      return 100 + rowPriority;
+      return rowPriority;
     };
 
-    // Sort squares by priority (lower priority number = better for placing players)
+    // Sort squares by priority (lower priority number = fill first)
     const prioritizedSquares = [...initialSquares].sort((a, b) => 
       getSquarePriority(a) - getSquarePriority(b)
     );
