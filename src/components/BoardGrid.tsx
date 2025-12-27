@@ -63,20 +63,22 @@ export const BoardGrid = ({ squares, players, categories, onSquareClick, highlig
         const borderLeft = isAdjacentToSameOwner(square, 'left');
         
         // Determine background and outline colors
+        // Streak (gold) takes priority over everything else
         let bgColor = undefined;
         let outlineColor = undefined;
         
-        if (isHighlighted) {
+        if (hasStreak) {
+          // Gold for 3+ win streak - highest priority
+          bgColor = 'hsl(var(--warning) / 0.5)';
+          outlineColor = 'hsl(var(--warning))';
+        } else if (isHighlighted) {
           // Duel options - bondi blue with black outline
           bgColor = 'rgba(0, 149, 182, 0.6)';
           outlineColor = 'rgb(0, 0, 0)';
         } else if (isActivePlayerSquare) {
-          // Active player choosing - electric blue (no animation)
+          // Active player choosing - electric blue
           bgColor = 'rgba(125, 249, 255, 0.5)';
           outlineColor = 'rgb(125, 249, 255)';
-        } else if (hasStreak) {
-          bgColor = 'hsl(var(--warning) / 0.4)';
-          outlineColor = 'hsl(var(--warning))';
         } else if (owner) {
           // Other owned squares - royal blue
           bgColor = 'rgba(65, 105, 225, 0.4)';
