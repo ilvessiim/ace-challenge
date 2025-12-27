@@ -4,7 +4,7 @@ import { BoardGrid } from "@/components/BoardGrid";
 import { DuelMode } from "@/components/DuelMode";
 import { AssignCategoryDialog } from "@/components/AssignCategoryDialog";
 import { StartDuelDialog } from "@/components/StartDuelDialog";
-import { ContinueTurnDialog } from "@/components/ContinueTurnDialog";
+import { ContinueTurnBanner } from "@/components/ContinueTurnBanner";
 import { DraftPlayerDialog } from "@/components/DraftPlayerDialog";
 import { Button } from "@/components/ui/button";
 import { Player, Category, Square, GameState, DuelState, ActiveTurn } from "@/types/game";
@@ -22,7 +22,7 @@ const Index = () => {
   const [showDuelDialog, setShowDuelDialog] = useState(false);
   const [activeTurn, setActiveTurn] = useState<ActiveTurn | null>(null);
   const [showDraftDialog, setShowDraftDialog] = useState(false);
-  const [showContinueDialog, setShowContinueDialog] = useState(false);
+  const [showContinueBanner, setShowContinueBanner] = useState(false);
   const [duelWinnerId, setDuelWinnerId] = useState<string | null>(null);
   const [draftedPlayerIds, setDraftedPlayerIds] = useState<string[]>([]);
 
@@ -201,7 +201,7 @@ const Index = () => {
     
     setDuelWinnerId(winnerId);
     setGameState('continue');
-    setShowContinueDialog(true);
+    setShowContinueBanner(true);
     
     toast({ 
       title: `${winner?.name} wins the duel!`,
@@ -236,7 +236,7 @@ const Index = () => {
     setRevealedPlayerIds([duelWinnerId, ...adjacentPlayerIds]);
     
     setActiveTurn({ playerId: duelWinnerId, territory: newTerritory, availableChallenges });
-    setShowContinueDialog(false);
+    setShowContinueBanner(false);
     setDuelState(null);
     setSelectedSquare(null);
     setDuelWinnerId(null);
@@ -246,7 +246,7 @@ const Index = () => {
   const handleEndTurn = () => {
     setActiveTurn(null);
     setRevealedPlayerIds([]);
-    setShowContinueDialog(false);
+    setShowContinueBanner(false);
     setDuelState(null);
     setSelectedSquare(null);
     setDuelWinnerId(null);
@@ -271,7 +271,7 @@ const Index = () => {
     setDuelWinnerId(null);
     setRevealedPlayerIds([]);
     setShowDraftDialog(false);
-    setShowContinueDialog(false);
+    setShowContinueBanner(false);
     setDraftedPlayerIds([]);
   };
 
@@ -284,7 +284,7 @@ const Index = () => {
     setDuelWinnerId(null);
     setRevealedPlayerIds([]);
     setShowDraftDialog(false);
-    setShowContinueDialog(false);
+    setShowContinueBanner(false);
     setDraftedPlayerIds([]);
   };
 
@@ -373,6 +373,27 @@ const Index = () => {
           })}
         </div>
 
+        {showContinueBanner && duelWinnerId && (() => {
+          const newTerritory = squares.filter(s => s.ownerId === duelWinnerId).map(s => s.id);
+          const adjacentSquareIds = getAdjacentSquares(newTerritory);
+          const challengeOptions = adjacentSquareIds.map(sqId => {
+            const sq = squares.find(s => s.id === sqId);
+            const player = players.find(p => p.id === sq?.ownerId);
+            const category = categories.find(c => c.id === player?.categoryId);
+            return player && category ? { player, category, squareId: sqId } : null;
+          }).filter((opt): opt is { player: Player; category: Category; squareId: string } => opt !== null);
+
+          return (
+            <ContinueTurnBanner
+              winner={players.find(p => p.id === duelWinnerId)!}
+              newTerritory={newTerritory}
+              availableChallenges={challengeOptions}
+              onContinue={handleContinueTurn}
+              onEndTurn={handleEndTurn}
+            />
+          );
+        })()}
+
         <BoardGrid 
           squares={squares} 
           players={players}
@@ -417,27 +438,6 @@ const Index = () => {
             }}
           />
         )}
-
-        {showContinueDialog && duelWinnerId && (() => {
-          const newTerritory = squares.filter(s => s.ownerId === duelWinnerId).map(s => s.id);
-          const adjacentSquareIds = getAdjacentSquares(newTerritory);
-          const challengeOptions = adjacentSquareIds.map(sqId => {
-            const sq = squares.find(s => s.id === sqId);
-            const player = players.find(p => p.id === sq?.ownerId);
-            const category = categories.find(c => c.id === player?.categoryId);
-            return player && category ? { player, category, squareId: sqId } : null;
-          }).filter((opt): opt is { player: Player; category: Category; squareId: string } => opt !== null);
-
-          return (
-            <ContinueTurnDialog
-              winner={players.find(p => p.id === duelWinnerId)!}
-              newTerritory={newTerritory}
-              availableChallenges={challengeOptions}
-              onContinue={handleContinueTurn}
-              onEndTurn={handleEndTurn}
-            />
-          );
-        })()}
       </div>
     </div>
   );

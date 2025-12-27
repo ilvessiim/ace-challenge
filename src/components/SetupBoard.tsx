@@ -197,11 +197,38 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
       }
     }
 
-    const availableSquares = [...initialSquares];
-    const squaresWithPlayers = players.map(player => {
-      const randomIndex = Math.floor(Math.random() * availableSquares.length);
-      const square = availableSquares[randomIndex];
-      availableSquares.splice(randomIndex, 1);
+    // Prioritize center squares: sort by distance from edges (center first)
+    // Leave edges blank first, then bottom row
+    const getSquarePriority = (sq: Square): number => {
+      const centerRow = (rows - 1) / 2;
+      const centerCol = (cols - 1) / 2;
+      
+      // Distance from center (lower = better)
+      const distFromCenter = Math.abs(sq.row - centerRow) + Math.abs(sq.col - centerCol);
+      
+      // Penalty for bottom row
+      const bottomPenalty = sq.row === rows - 1 ? 100 : 0;
+      
+      // Penalty for edges
+      const isEdge = sq.row === 0 || sq.row === rows - 1 || sq.col === 0 || sq.col === cols - 1;
+      const edgePenalty = isEdge ? 50 : 0;
+      
+      return distFromCenter + bottomPenalty + edgePenalty;
+    };
+
+    // Sort squares by priority (lower priority number = better for placing players)
+    const prioritizedSquares = [...initialSquares].sort((a, b) => 
+      getSquarePriority(a) - getSquarePriority(b)
+    );
+
+    // Take the first N squares for players (N = number of players)
+    const squaresForPlayers = prioritizedSquares.slice(0, players.length);
+    
+    // Shuffle which player gets which of the prioritized squares
+    const shuffledPlayerSquares = shuffleArray(squaresForPlayers);
+    
+    const squaresWithPlayers = players.map((player, index) => {
+      const square = shuffledPlayerSquares[index];
       return {
         ...square,
         ownerId: player.id,
