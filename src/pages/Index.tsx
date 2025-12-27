@@ -26,6 +26,7 @@ const Index = () => {
   const [showContinueBanner, setShowContinueBanner] = useState(false);
   const [duelWinnerId, setDuelWinnerId] = useState<string | null>(null);
   const [draftedPlayerIds, setDraftedPlayerIds] = useState<string[]>([]);
+  const [lastEndedTurnPlayerId, setLastEndedTurnPlayerId] = useState<string | null>(null);
   const [gameWinner, setGameWinner] = useState<Player | null>(null);
   const [initialGameData, setInitialGameData] = useState<{
     rows: number;
@@ -77,12 +78,22 @@ const Index = () => {
     }
     
     // Find players who haven't been drafted yet this round
-    let eligiblePlayerIds = activePlayerIds.filter(id => !stillInGameDrafted.includes(id));
+    // Also exclude the player who just ended their turn
+    let eligiblePlayerIds = activePlayerIds.filter(id => 
+      !stillInGameDrafted.includes(id) && id !== lastEndedTurnPlayerId
+    );
     
-    // If everyone has been drafted, reset the round
+    // If everyone has been drafted (or only the last-ended player remains), reset the round
     if (eligiblePlayerIds.length === 0) {
       setDraftedPlayerIds([]);
-      eligiblePlayerIds = activePlayerIds;
+      setLastEndedTurnPlayerId(null);
+      eligiblePlayerIds = activePlayerIds.filter(id => id !== lastEndedTurnPlayerId);
+      
+      // If still no one eligible (only the last-ended player exists), include them
+      if (eligiblePlayerIds.length === 0) {
+        eligiblePlayerIds = activePlayerIds;
+        setLastEndedTurnPlayerId(null);
+      }
     }
     
     // Filter to only those with adjacent opponents
@@ -286,6 +297,8 @@ const Index = () => {
   };
 
   const handleEndTurn = () => {
+    const endingPlayerId = activeTurn?.playerId || duelWinnerId;
+    
     setActiveTurn(null);
     setRevealedPlayerIds([]);
     setShowContinueBanner(false);
@@ -293,6 +306,11 @@ const Index = () => {
     setSelectedSquare(null);
     setDuelWinnerId(null);
     setGameState('playing');
+    
+    // Track who just ended their turn so they won't be drafted next
+    if (endingPlayerId) {
+      setLastEndedTurnPlayerId(endingPlayerId);
+    }
     
     // Auto-draft next player
     setTimeout(() => {
@@ -321,6 +339,7 @@ const Index = () => {
     setShowDraftDialog(false);
     setShowContinueBanner(false);
     setDraftedPlayerIds([]);
+    setLastEndedTurnPlayerId(null);
     setGameWinner(null);
     setGameState('playing');
     toast({ title: "Game restarted!", description: "Same players and categories" });
@@ -339,6 +358,7 @@ const Index = () => {
     setShowDraftDialog(false);
     setShowContinueBanner(false);
     setDraftedPlayerIds([]);
+    setLastEndedTurnPlayerId(null);
     setGameWinner(null);
     setInitialGameData(null);
   };
