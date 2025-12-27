@@ -38,19 +38,18 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel, onBonusUsed }: DuelModePro
   const currentQuestion = questions[currentQuestionIndex];
   const isPlayer1Turn = currentPlayer === duel.player1.id;
   const currentPlayerObj = isPlayer1Turn ? duel.player1 : duel.player2;
-  const currentPlayerBonusUsed = isPlayer1Turn ? player1BonusUsed : player2BonusUsed;
-  const canUseBonus = currentPlayerObj.winStreak >= 3 && !currentPlayerBonusUsed;
+  const player1CanUseBonus = duel.player1.winStreak >= 3 && !player1BonusUsed;
+  const player2CanUseBonus = duel.player2.winStreak >= 3 && !player2BonusUsed;
 
-  const applyBonus = () => {
-    const currentPlayerId = isPlayer1Turn ? duel.player1.id : duel.player2.id;
-    if (isPlayer1Turn) {
+  const applyBonus = (playerId: string) => {
+    if (playerId === duel.player1.id) {
       setPlayer1Time(prev => prev + 5);
       setPlayer1BonusUsed(true);
     } else {
       setPlayer2Time(prev => prev + 5);
       setPlayer2BonusUsed(true);
     }
-    onBonusUsed(currentPlayerId);
+    onBonusUsed(playerId);
   };
 
   const startDuel = () => {
@@ -166,56 +165,71 @@ export const DuelMode = ({ duel, onDuelEnd, onCancel, onBonusUsed }: DuelModePro
             <div 
               className="p-8 rounded-lg text-center space-y-3"
               style={{
-                backgroundColor: `hsl(var(--${duel.player1.color}) / 0.2)`,
+                backgroundColor: player1CanUseBonus 
+                  ? 'hsl(var(--warning) / 0.3)'
+                  : `hsl(var(--${duel.player1.color}) / 0.2)`,
                 borderWidth: '2px',
-                borderColor: `hsl(var(--${duel.player1.color}))`
+                borderColor: player1CanUseBonus 
+                  ? 'hsl(var(--warning))'
+                  : `hsl(var(--${duel.player1.color}))`
               }}
             >
               <PlayerAvatar player={duel.player1} size="lg" />
               <div className="text-2xl font-bold">{duel.player1.name}</div>
-              {duel.player1.winStreak >= 3 && !player1BonusUsed && (
-                <div className="text-warning text-sm font-semibold">🔥 3-Win Streak!</div>
+              {player1CanUseBonus && (
+                <div className="space-y-2">
+                  <div className="text-warning text-sm font-semibold">🔥 3-Win Streak!</div>
+                  <Button 
+                    onClick={() => applyBonus(duel.player1.id)} 
+                    variant="default" 
+                    size="sm"
+                    className="bg-warning hover:bg-warning/90 text-warning-foreground"
+                  >
+                    Use +5 Seconds
+                  </Button>
+                </div>
+              )}
+              {duel.player1.winStreak >= 3 && player1BonusUsed && (
+                <div className="text-muted-foreground text-sm">✓ Bonus Used (+5s)</div>
               )}
             </div>
 
             <div 
               className="p-8 rounded-lg text-center space-y-3"
               style={{
-                backgroundColor: `hsl(var(--${duel.player2.color}) / 0.2)`,
+                backgroundColor: player2CanUseBonus 
+                  ? 'hsl(var(--warning) / 0.3)'
+                  : `hsl(var(--${duel.player2.color}) / 0.2)`,
                 borderWidth: '2px',
-                borderColor: `hsl(var(--${duel.player2.color}))`
+                borderColor: player2CanUseBonus 
+                  ? 'hsl(var(--warning))'
+                  : `hsl(var(--${duel.player2.color}))`
               }}
             >
               <PlayerAvatar player={duel.player2} size="lg" />
               <div className="text-2xl font-bold">{duel.player2.name}</div>
-              {duel.player2.winStreak >= 3 && !player2BonusUsed && (
-                <div className="text-warning text-sm font-semibold">🔥 3-Win Streak!</div>
+              {player2CanUseBonus && (
+                <div className="space-y-2">
+                  <div className="text-warning text-sm font-semibold">🔥 3-Win Streak!</div>
+                  <Button 
+                    onClick={() => applyBonus(duel.player2.id)} 
+                    variant="default" 
+                    size="sm"
+                    className="bg-warning hover:bg-warning/90 text-warning-foreground"
+                  >
+                    Use +5 Seconds
+                  </Button>
+                </div>
+              )}
+              {duel.player2.winStreak >= 3 && player2BonusUsed && (
+                <div className="text-muted-foreground text-sm">✓ Bonus Used (+5s)</div>
               )}
             </div>
           </div>
 
-          {(canUseBonus) && (
-            <Card className="p-6 bg-warning/20 border-warning">
-              <div className="text-center space-y-4">
-                <div className="text-lg font-bold">🔥 Bonus Available for {currentPlayerObj.name}!</div>
-                <p className="text-sm">You have a 3-win streak. Add +5 seconds to your time?</p>
-                <div className="flex gap-4 justify-center">
-                  <Button onClick={applyBonus} variant="default" size="lg">
-                    Use +5 Seconds Bonus
-                  </Button>
-                  <Button onClick={startDuel} variant="outline" size="lg">
-                    Continue Without Bonus
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          )}
-
-          {!canUseBonus && (
-            <Button onClick={startDuel} size="lg" className="w-full text-xl py-6">
-              Start Playing
-            </Button>
-          )}
+          <Button onClick={startDuel} size="lg" className="w-full text-xl py-6">
+            Start Playing
+          </Button>
 
           <Button onClick={onCancel} variant="outline" className="w-full">
             Cancel Duel
