@@ -197,42 +197,34 @@ const Index = () => {
   };
 
   const handleDuelEnd = (winnerId: string) => {
-    if (!duelState || !activeTurn) return;
+    if (!duelState) return;
 
     const loserId = winnerId === duelState.player1.id ? duelState.player2.id : duelState.player1.id;
     const winner = players.find(p => p.id === winnerId);
     const loser = players.find(p => p.id === loserId);
-    
+
     // Transfer ALL squares owned by loser to winner, and update category to winner's category
     const winnerCategoryId = winner?.categoryId || null;
-    const updatedSquares = squares.map(s => 
+    const updatedSquares = squares.map(s =>
       s.ownerId === loserId ? { ...s, ownerId: winnerId, categoryId: winnerCategoryId } : s
     );
     const capturedSquares = squares.filter(s => s.ownerId === loserId).length;
     setSquares(updatedSquares);
-    
+
     // Update win streaks - only increment winner's streak, don't transfer from loser
     // Winner gets +1 to their own streak, loser resets to 0
-    let updatedPlayers = players.map(p => {
+    const updatedPlayers = players.map(p => {
       if (p.id === winnerId) {
-        // Winner increments their own streak
         return { ...p, winStreak: p.winStreak + 1 };
       }
       if (p.id === loserId) {
-        // Loser resets their streak, loses category, and is effectively eliminated
         return { ...p, winStreak: 0, categoryId: null };
       }
       return p;
     });
-    
+
     setPlayers(updatedPlayers);
-    
-    // Log elimination for debugging
-    const loserSquaresAfter = updatedSquares.filter(s => s.ownerId === loserId).length;
-    if (loserSquaresAfter === 0) {
-      console.log(`${loser?.name} has been eliminated!`);
-    }
-    
+
     // Check if only one player remains (game over)
     const remainingPlayerIds = [...new Set(updatedSquares.filter(s => s.ownerId).map(s => s.ownerId!))];
     if (remainingPlayerIds.length === 1) {
@@ -240,15 +232,20 @@ const Index = () => {
       if (finalWinner) {
         setGameWinner(finalWinner);
         setDuelState(null);
+        setSelectedSquare(null);
         return;
       }
     }
-    
+
+    // Move to "continue" flow for the duel winner.
+    // IMPORTANT: clear activeTurn so the loser (or previous active player) cannot keep dueling from the board.
+    setActiveTurn(null);
     setDuelWinnerId(winnerId);
     setGameState('continue');
     setShowContinueBanner(true);
-    
-    toast({ 
+    setSelectedSquare(null);
+
+    toast({
       title: `${winner?.name} wins the duel!`,
       description: `${winner?.emoji} captured ${capturedSquares} square${capturedSquares !== 1 ? 's' : ''}! Win streak: ${(winner?.winStreak || 0) + 1}`
     });
