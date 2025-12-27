@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SetupBoard } from "@/components/SetupBoard";
 import { BoardGrid } from "@/components/BoardGrid";
 import { DuelMode } from "@/components/DuelMode";
@@ -6,6 +6,7 @@ import { AssignCategoryDialog } from "@/components/AssignCategoryDialog";
 import { StartDuelDialog } from "@/components/StartDuelDialog";
 import { ContinueTurnBanner } from "@/components/ContinueTurnBanner";
 import { DraftPlayerDialog } from "@/components/DraftPlayerDialog";
+import { WinnerDialog } from "@/components/WinnerDialog";
 import { Button } from "@/components/ui/button";
 import { Player, Category, Square, GameState, DuelState, ActiveTurn } from "@/types/game";
 import { Settings, User } from "lucide-react";
@@ -25,7 +26,14 @@ const Index = () => {
   const [showContinueBanner, setShowContinueBanner] = useState(false);
   const [duelWinnerId, setDuelWinnerId] = useState<string | null>(null);
   const [draftedPlayerIds, setDraftedPlayerIds] = useState<string[]>([]);
-
+  const [gameWinner, setGameWinner] = useState<Player | null>(null);
+  const [initialGameData, setInitialGameData] = useState<{
+    rows: number;
+    cols: number;
+    players: Player[];
+    categories: Category[];
+    squares: Square[];
+  } | null>(null);
   const getAdjacentSquares = (squareIds: string[]): string[] => {
     const adjacent = new Set<string>();
     
@@ -119,6 +127,17 @@ const Index = () => {
     setCategories(gameCategories);
     setSquares(gameSquares);
     setGameState('playing');
+    setGameWinner(null);
+    
+    // Store initial game data for replay
+    setInitialGameData({
+      rows,
+      cols,
+      players: gamePlayers.map(p => ({ ...p, winStreak: 0 })),
+      categories: gameCategories,
+      squares: gameSquares
+    });
+    
     toast({ title: "Assign players to squares, then start drafting!" });
   };
 
@@ -214,6 +233,17 @@ const Index = () => {
       console.log(`${loser?.name} has been eliminated!`);
     }
     
+    // Check if only one player remains (game over)
+    const remainingPlayerIds = [...new Set(updatedSquares.filter(s => s.ownerId).map(s => s.ownerId!))];
+    if (remainingPlayerIds.length === 1) {
+      const finalWinner = updatedPlayers.find(p => p.id === remainingPlayerIds[0]);
+      if (finalWinner) {
+        setGameWinner(finalWinner);
+        setDuelState(null);
+        return;
+      }
+    }
+    
     setDuelWinnerId(winnerId);
     setGameState('continue');
     setShowContinueBanner(true);
@@ -279,6 +309,26 @@ const Index = () => {
     setSelectedSquare(null);
   };
 
+  const handleReplay = () => {
+    if (!initialGameData) return;
+    
+    // Reset with same players and categories
+    setPlayers(initialGameData.players.map(p => ({ ...p, winStreak: 0 })));
+    setCategories(initialGameData.categories);
+    setSquares(initialGameData.squares);
+    setDuelState(null);
+    setSelectedSquare(null);
+    setActiveTurn(null);
+    setDuelWinnerId(null);
+    setRevealedPlayerIds([]);
+    setShowDraftDialog(false);
+    setShowContinueBanner(false);
+    setDraftedPlayerIds([]);
+    setGameWinner(null);
+    setGameState('playing');
+    toast({ title: "Game restarted!", description: "Same players and categories" });
+  };
+
   const handleResetGame = () => {
     setGameState('setup');
     setPlayers([]);
@@ -292,6 +342,8 @@ const Index = () => {
     setShowDraftDialog(false);
     setShowContinueBanner(false);
     setDraftedPlayerIds([]);
+    setGameWinner(null);
+    setInitialGameData(null);
   };
 
   const handleEditSettings = () => {
@@ -471,6 +523,14 @@ const Index = () => {
               setShowDraftDialog(false);
               setGameState('draft');
             }}
+          />
+        )}
+
+        {gameWinner && (
+          <WinnerDialog
+            winner={gameWinner}
+            onReplay={handleReplay}
+            onNewGame={handleResetGame}
           />
         )}
       </div>
