@@ -251,7 +251,11 @@ const Index = () => {
     setSelectedSquare(null);
     setDuelWinnerId(null);
     setGameState('playing');
-    toast({ title: "Turn ended", description: "Click 'Draft Player' to start next turn" });
+    
+    // Auto-draft next player
+    setTimeout(() => {
+      draftRandomPlayer();
+    }, 100);
   };
 
   const handleCancelDuel = () => {
@@ -399,9 +403,11 @@ const Index = () => {
           players={players}
           categories={categories}
           onSquareClick={handleSquareClick}
-          highlightedSquares={activeTurn?.availableChallenges}
+          highlightedSquares={showContinueBanner && duelWinnerId 
+            ? getAdjacentSquares(squares.filter(s => s.ownerId === duelWinnerId).map(s => s.id))
+            : activeTurn?.availableChallenges}
           revealedPlayerIds={revealedPlayerIds}
-          activePlayerId={activeTurn?.playerId}
+          activePlayerId={showContinueBanner ? duelWinnerId || undefined : activeTurn?.playerId}
         />
 
         {showDuelDialog && selectedSquare && activeTurn && (
