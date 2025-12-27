@@ -197,23 +197,23 @@ export const SetupBoard = ({ onStartGame, existingPlayers, existingCategories }:
       }
     }
 
-    // Prioritize center squares: sort by distance from edges (center first)
-    // Leave edges blank first, then bottom row
+    // Prioritize: corners first, then bottom rows, then remaining squares
     const getSquarePriority = (sq: Square): number => {
-      const centerRow = (rows - 1) / 2;
-      const centerCol = (cols - 1) / 2;
+      const isTopLeft = sq.row === 0 && sq.col === 0;
+      const isTopRight = sq.row === 0 && sq.col === cols - 1;
+      const isBottomLeft = sq.row === rows - 1 && sq.col === 0;
+      const isBottomRight = sq.row === rows - 1 && sq.col === cols - 1;
       
-      // Distance from center (lower = better)
-      const distFromCenter = Math.abs(sq.row - centerRow) + Math.abs(sq.col - centerCol);
+      // Corners get highest priority (lowest number)
+      if (isTopLeft || isTopRight || isBottomLeft || isBottomRight) {
+        return 0;
+      }
       
-      // Penalty for bottom row
-      const bottomPenalty = sq.row === rows - 1 ? 100 : 0;
+      // Bottom rows get next priority (lower row number = higher in grid = lower priority for filling)
+      // So we want higher row numbers (bottom) to have lower priority values
+      const rowPriority = (rows - 1 - sq.row) * 10; // Bottom rows first
       
-      // Penalty for edges
-      const isEdge = sq.row === 0 || sq.row === rows - 1 || sq.col === 0 || sq.col === cols - 1;
-      const edgePenalty = isEdge ? 50 : 0;
-      
-      return distFromCenter + bottomPenalty + edgePenalty;
+      return 100 + rowPriority;
     };
 
     // Sort squares by priority (lower priority number = better for placing players)
