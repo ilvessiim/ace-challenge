@@ -386,29 +386,43 @@ const Index = () => {
             const category = categories.find(c => c.id === player?.categoryId);
             return player && category ? { player, category, squareId: sqId } : null;
           }).filter((opt): opt is { player: Player; category: Category; squareId: string } => opt !== null);
+          
+          // Get opponent player IDs for revealing their categories
+          const opponentPlayerIds = challengeOptions.map(opt => opt.player.id);
 
           return (
-            <ContinueTurnBanner
-              winner={players.find(p => p.id === duelWinnerId)!}
-              newTerritory={newTerritory}
-              availableChallenges={challengeOptions}
-              onContinue={handleContinueTurn}
-              onEndTurn={handleEndTurn}
-            />
+            <>
+              <ContinueTurnBanner
+                winner={players.find(p => p.id === duelWinnerId)!}
+                newTerritory={newTerritory}
+                availableChallenges={challengeOptions}
+                onContinue={handleContinueTurn}
+                onEndTurn={handleEndTurn}
+              />
+              <BoardGrid 
+                squares={squares} 
+                players={players}
+                categories={categories}
+                onSquareClick={handleSquareClick}
+                highlightedSquares={adjacentSquareIds}
+                revealedPlayerIds={[duelWinnerId, ...opponentPlayerIds]}
+                activePlayerId={duelWinnerId}
+              />
+            </>
           );
         })()}
 
-        <BoardGrid 
-          squares={squares} 
-          players={players}
-          categories={categories}
-          onSquareClick={handleSquareClick}
-          highlightedSquares={showContinueBanner && duelWinnerId 
-            ? getAdjacentSquares(squares.filter(s => s.ownerId === duelWinnerId).map(s => s.id))
-            : activeTurn?.availableChallenges}
-          revealedPlayerIds={revealedPlayerIds}
-          activePlayerId={showContinueBanner ? duelWinnerId || undefined : activeTurn?.playerId}
-        />
+        {!showContinueBanner && (
+          <BoardGrid 
+            squares={squares} 
+            players={players}
+            categories={categories}
+            onSquareClick={handleSquareClick}
+            highlightedSquares={activeTurn?.availableChallenges}
+            revealedPlayerIds={revealedPlayerIds}
+            activePlayerId={activeTurn?.playerId}
+          />
+        )}
 
         {showDuelDialog && selectedSquare && activeTurn && (
           <StartDuelDialog
